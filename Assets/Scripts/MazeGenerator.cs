@@ -62,6 +62,17 @@ public class MazeGenerator : MonoBehaviour
     [Tooltip("Same number = same look when you press 'Refresh Look'.")]
     [SerializeField] private int detailSeed = 4242;
 
+    [Header("Dark forest walls")]
+    [Tooltip("Different tints of the wall material, one picked per wall piece so the walls do not look the same everywhere. Empty = only the wall material above.")]
+    [SerializeField] private Material[] wallVariants;
+    [Tooltip("Hanging vines (a cutout material with the vine texture).")]
+    [SerializeField] private Material vineMaterial;
+    [SerializeField] private float vineSpacing = 3.4f;
+    [Range(0f, 1f)] [SerializeField] private float vineChance = 0.5f;
+    [Tooltip("Broken, uneven stones along the top of the walls.")]
+    [SerializeField] private bool brokenTop = true;
+    [SerializeField] private float brokenTopSpacing = 2f;
+
     [Header("Decorations (trees, rocks)")]
     [SerializeField] private GameObject[] decorations;
     [SerializeField] private int decorationCount = 250;
@@ -255,7 +266,7 @@ public class MazeGenerator : MonoBehaviour
                 // Vertical walls are a hair thicker, longer and taller than horizontal ones, so their faces
                 // are never on the same plane as a horizontal wall (that caused flickering z-fighting at corners).
                 Vector3 size = new Vector3(wallThickness + VExtraT, wallHeight + VExtraH, len * cellSize + wallThickness + VExtraT);
-                MakeCube("Wall_V", walls, pos, size, mat);
+                MakeCube("Wall_V", walls, pos, size, PickWallMaterial(pos, mat));
             }
         }
 
@@ -271,7 +282,7 @@ public class MazeGenerator : MonoBehaviour
                 int len = x - start;
                 Vector3 pos = new Vector3((start + len * 0.5f) * cellSize, wallHeight * 0.5f, y * cellSize);
                 Vector3 size = new Vector3(len * cellSize + wallThickness, wallHeight, wallThickness);
-                MakeCube("Wall_H", walls, pos, size, mat);
+                MakeCube("Wall_H", walls, pos, size, PickWallMaterial(pos, mat));
             }
         }
     }
@@ -288,7 +299,7 @@ private GameObject MakeCube(string objName, Transform parent, Vector3 localPos, 
 
         // Texture tiles at the same size on every wall, however long it is.
         float tile = objName == "Floor" ? floorTileSize : (objName.StartsWith("Wall") ? wallTileSize : 0f);
-        if (tile > 0f) ApplyWorldUV(cube, tile);
+        if (tile > 0f) ApplyWorldUV(cube, tile, objName.StartsWith("Wall"));
 
         SetStatic(cube);
         return cube;
@@ -297,7 +308,7 @@ private GameObject MakeCube(string objName, Transform parent, Vector3 localPos, 
     // ---------------------------------------------------------------- surface look + details
 
     // Gives a cube UVs measured in metres, so a texture keeps the same size on short and long walls.
-    private static void ApplyWorldUV(GameObject cube, float tile)
+    private static void ApplyWorldUV(GameObject cube, float tile, bool wall = false)
     {
         MeshFilter mf = cube.GetComponent<MeshFilter>();
         if (mf == null || mf.sharedMesh == null || tile <= 0.01f) return;
@@ -307,7 +318,9 @@ private GameObject MakeCube(string objName, Transform parent, Vector3 localPos, 
 
         Vector3 s = cube.transform.localScale;
         Vector3 pos = cube.transform.localPosition;
-        Vector2 off = new Vector2(pos.x * 0.173f, pos.z * 0.291f); // so neighbouring walls do not repeat exactly
+        // Walls: only shift sideways, and start the texture exactly at the bottom, so the moss follows the height.
+        Vector2 off = wall ? new Vector2(pos.x * 0.173f + pos.z * 0.291f, s.y / (2f * tile))
+                           : new Vector2(pos.x * 0.173f, pos.z * 0.291f); // so neighbouring pieces do not repeat exactly
         Vector3[] v = m.vertices;
         Vector3[] n = m.normals;
         Vector2[] uv = new Vector2[v.Length];
@@ -348,7 +361,7 @@ private GameObject MakeCube(string objName, Transform parent, Vector3 localPos, 
             Material wm = GetMaterial(wallMaterial, new Color(0.07f, 0.17f, 0.09f));
             foreach (Transform w in walls)
             {
-                w.GetComponent<Renderer>().sharedMaterial = wm;
+                w.GetComponent<Renderer>().sharedMaterial = PickWallMaterial(w.localPosition, wm);
                 if (w.name == "Wall_V")
                 {
                     // same fix for a maze that already exists (safe to run many times)
@@ -360,7 +373,7 @@ private GameObject MakeCube(string objName, Transform parent, Vector3 localPos, 
                     BoxCollider bc = w.GetComponent<BoxCollider>();
                     if (bc != null) { bc.size = Vector3.one; bc.center = Vector3.zero; }
                 }
-                ApplyWorldUV(w.gameObject, wallTileSize);
+                ApplyWorldUV(w.gameObject, wallTileSize, true);
             }
         }
 
@@ -386,6 +399,9 @@ private GameObject MakeCube(string objName, Transform parent, Vector3 localPos, 
         Transform baseHolder = new GameObject("WallBase").transform; baseHolder.SetParent(holder, false);
         Transform topHolder = new GameObject("WallTop").transform; topHolder.SetParent(holder, false);
         Transform groundHolder = new GameObject("Ground").transform; groundHolder.SetParent(holder, false);
+        Transform vineHolder = new GameObject("Vines").transform; vineHolder.SetParent(holder, false);
+        Transform stoneHolder = new GameObject("BrokenTop").transform; stoneHolder.SetParent(holder, false);
+        System.Random decorRng = new System.Random(detailSeed + 99); // separate, so the bushes keep their places
 
         Physics.SyncTransforms();
 
@@ -405,6 +421,8 @@ private GameObject MakeCube(string objName, Transform parent, Vector3 localPos, 
                 Vector3 axis = alongX ? Vector3.right : Vector3.forward;
                 Vector3 side = alongX ? Vector3.forward : Vector3.right;
 
+                DecorateWall(w, decorRng, vineHolder, stoneHolder);
+
                 if (wallBaseProps != null && wallBaseProps.Length > 0 && wallBaseSpacing > 0.5f)
                 {
                     for (float d = -length * 0.5f + wallBaseSpacing * 0.5f; d < length * 0.5f; d += wallBaseSpacing * Mathf.Lerp(0.6f, 1.4f, (float)rng.NextDouble()))
@@ -421,9 +439,13 @@ private GameObject MakeCube(string objName, Transform parent, Vector3 localPos, 
                 {
                     for (float d = -length * 0.5f + wallTopSpacing * 0.5f; d < length * 0.5f; d += wallTopSpacing * Mathf.Lerp(0.7f, 1.3f, (float)rng.NextDouble()))
                     {
-                        Vector3 p = w.localPosition + axis * d;
-                        p.y = wallHeight - 0.15f;
-                        PlaceProp(wallTopProps, topHolder, p, 1.4f, 2.4f, rng);
+                        // Bushes stand on the ground next to the wall (not on top of it).
+                        float topSign = rng.Next(2) == 0 ? -1f : 1f;
+                        Vector3 p = w.localPosition + axis * d + side * topSign * (thick * 0.5f + 0.6f + (float)rng.NextDouble() * 0.25f);
+                        p.y = 0f;
+                        if (IsNear(keepClear, p, 1.8f)) continue;
+                        if (Physics.CheckBox(transform.TransformPoint(p) + Vector3.up * 0.7f, new Vector3(0.4f, 0.5f, 0.4f))) continue;
+                        PlaceProp(wallTopProps, topHolder, p, 0.9f, 1.4f, rng);
                     }
                 }
             }
@@ -444,6 +466,89 @@ private GameObject MakeCube(string objName, Transform parent, Vector3 localPos, 
                 placed++;
             }
         }
+    }
+
+    // One of the wall tints, chosen from the position (same result every time for the same wall piece).
+    private Material PickWallMaterial(Vector3 localPos, Material fallback)
+    {
+        if (wallVariants == null || wallVariants.Length == 0) return fallback;
+        int h = Mathf.Abs(Mathf.RoundToInt(localPos.x * 7.3f) * 31 + Mathf.RoundToInt(localPos.z * 5.1f) * 17);
+        Material m = wallVariants[h % wallVariants.Length];
+        return m != null ? m : fallback;
+    }
+
+    // Hanging vines on both faces of a wall and broken stones along its top edge.
+    private void DecorateWall(Transform w, System.Random rng, Transform vineHolder, Transform stoneHolder)
+    {
+        Vector3 s = w.localScale;
+        bool alongX = s.x > s.z;
+        float length = alongX ? s.x : s.z;
+        float thick = alongX ? s.z : s.x;
+        Vector3 axis = alongX ? Vector3.right : Vector3.forward;
+        Vector3 side = alongX ? Vector3.forward : Vector3.right;
+        float topY = w.localPosition.y + s.y * 0.5f;
+
+        if (vineMaterial != null && vineSpacing > 0.5f && vineChance > 0f)
+        {
+            for (float d = -length * 0.5f + 0.9f; d < length * 0.5f - 0.9f; d += vineSpacing * Mathf.Lerp(0.7f, 1.4f, (float)rng.NextDouble()))
+            {
+                for (int sg = -1; sg <= 1; sg += 2)
+                {
+                    if (rng.NextDouble() > vineChance) continue;
+                    float vw = Mathf.Lerp(1.0f, 1.7f, (float)rng.NextDouble());
+                    float vh = Mathf.Lerp(1.3f, 2.9f, (float)rng.NextDouble());
+                    Vector3 outward = side * sg;
+                    Vector3 pos = w.localPosition + axis * (d + ((float)rng.NextDouble() - 0.5f) * 0.6f) + outward * (thick * 0.5f + 0.035f);
+                    pos.y = topY - vh * 0.5f - 0.01f;
+
+                    GameObject q = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                    q.name = "Vine";
+                    NoCollider(q);
+                    q.transform.SetParent(vineHolder, false);
+                    q.transform.localPosition = pos;
+                    q.transform.localRotation = Quaternion.LookRotation(-outward, Vector3.up); // visible face looks away from the wall
+                    q.transform.localScale = new Vector3(rng.Next(2) == 0 ? vw : -vw, vh, 1f);
+                    Renderer r = q.GetComponent<Renderer>();
+                    r.sharedMaterial = vineMaterial;
+                    r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    SetStatic(q);
+                }
+            }
+        }
+
+        if (brokenTop && brokenTopSpacing > 0.3f)
+        {
+            Material stoneMat = w.GetComponent<Renderer>().sharedMaterial;
+            for (float d = -length * 0.5f + 0.4f; d < length * 0.5f - 0.4f; d += brokenTopSpacing * Mathf.Lerp(0.6f, 1.5f, (float)rng.NextDouble()))
+            {
+                float along = Mathf.Lerp(0.35f, 0.95f, (float)rng.NextDouble());
+                float tall = Mathf.Lerp(0.12f, 0.5f, (float)rng.NextDouble());
+                float across = thick * Mathf.Lerp(0.55f, 1.05f, (float)rng.NextDouble());
+                Vector3 size = alongX ? new Vector3(along, tall, across) : new Vector3(across, tall, along);
+                Vector3 pos = w.localPosition + axis * d + side * (((float)rng.NextDouble() - 0.5f) * thick * 0.35f);
+                pos.y = topY + tall * 0.5f - 0.03f;
+
+                GameObject c = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                c.name = "TopStone";
+                NoCollider(c);
+                c.transform.SetParent(stoneHolder, false);
+                c.transform.localPosition = pos;
+                c.transform.localRotation = Quaternion.Euler(((float)rng.NextDouble() - 0.5f) * 10f, ((float)rng.NextDouble() - 0.5f) * 28f, ((float)rng.NextDouble() - 0.5f) * 10f);
+                c.transform.localScale = size;
+                c.GetComponent<Renderer>().sharedMaterial = stoneMat;
+                ApplyWorldUV(c, wallTileSize);
+                SetStatic(c);
+            }
+        }
+    }
+
+    // Props must never block the player, and must not disturb the physics checks that place the other props.
+    private static void NoCollider(GameObject go)
+    {
+        Collider c = go.GetComponent<Collider>();
+        if (c == null) return;
+        c.enabled = false;
+        if (Application.isPlaying) Destroy(c); else DestroyImmediate(c);
     }
 
     private static bool IsNear(List<Vector3> points, Vector3 p, float radius)

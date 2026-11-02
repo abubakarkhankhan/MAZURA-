@@ -48,11 +48,17 @@ public class DayNightManager : MonoBehaviour
     [Tooltip("Light intensity.")]
     [SerializeField] private AnimationCurve lightIntensity = DefaultIntensity();
 
-    [Header("Sun path")]
-    [Tooltip("Light pitch (degrees) at the start of the day, just above the horizon.")]
-    [SerializeField] private float sunriseAngle = 10f;
-    [Tooltip("Light pitch (degrees) at the end of the day.")]
-    [SerializeField] private float sunsetAngle = 170f;
+    [Header("Sun path (the sun sweeps across the sky; SkyDecor turns the sky texture to match)")]
+    [Tooltip("Height of the sun above the horizon (degrees) at sunrise and sunset.")]
+    public float sunLowElevation = 14f;
+    [Tooltip("Height of the sun above the horizon (degrees) at noon. The sky texture has its sun painted low, so keep this modest (30-40) or the horizon glow tilts.")]
+    public float sunHighElevation = 34f;
+    [Tooltip("Compass direction (degrees, 0 = +Z, 90 = +X) where the sun rises.")]
+    public float sunriseAzimuth = 70f;
+    [Tooltip("Compass direction where the sun sets. The sun sweeps from the rise to this direction during the day.")]
+    public float sunsetAzimuth = 230f;
+    [Tooltip("How far below the horizon (degrees) the light travels at midnight.")]
+    public float nightDepth = 40f;
 
     [Header("Events")]
     [Tooltip("Fired once when the night begins.")]
@@ -68,13 +74,14 @@ public class DayNightManager : MonoBehaviour
 
     private Phase phase = Phase.Day;
     private float elapsed;           // seconds spent in the current phase
-    private float yaw;               // the light's compass direction, kept from the scene
     private int shownSecond = -1;    // avoids rebuilding the HUD string every frame
 
     public bool IsNight { get { return phase == Phase.Night; } }
     public float PhaseProgress { get { return Mathf.Clamp01(elapsed / PhaseLength(phase)); } }
     public Phase CurrentPhase { get { return phase; } }
     public float PhaseTimeLeft { get { return Mathf.Max(0f, PhaseLength(phase) - elapsed); } }
+    /// <summary>Position on the colour gradients (0..1): 0.0-0.18 midnight, 0.18-0.32 dawn/morning, 0.32-0.62 day, 0.62-0.80 evening, 0.80-1.0 night.</summary>
+    public float GradientTime { get; private set; }
 
     private void Awake()
     {
@@ -93,7 +100,6 @@ public class DayNightManager : MonoBehaviour
                 if (l.type == LightType.Directional) { sun = l; break; }
             }
         }
-        if (sun != null) yaw = sun.transform.eulerAngles.y;
 
         // Ambient colour only works in Flat mode.
         RenderSettings.ambientMode = AmbientMode.Flat;
@@ -179,13 +185,15 @@ public class DayNightManager : MonoBehaviour
 
         // g = where we are on the colour gradients (0..1). It is continuous at every phase change.
         float g;
-        float pitch;
+        float az;   // compass direction of the sun (degrees)
+        float el;   // height of the sun above the horizon (degrees, negative = below)
         if (phase == Phase.Day)
         {
             // Morning -> afternoon, then the dusk blend into night.
             g = inBlend ? Mathf.Lerp(GradDayEnd, GradNightStart, blendT)
                         : Mathf.Lerp(GradDayStart, GradDayEnd, elapsed / Mathf.Max(0.01f, coreLength));
-            pitch = Mathf.Lerp(sunriseAngle, sunsetAngle, progress);
+            az = Mathf.Lerp(sunriseAzimuth, sunsetAzimuth, progress);
+            el = Mathf.Lerp(sunLowElevation, sunHighElevation, Mathf.Sin(progress * Mathf.PI));
         }
         else
         {
@@ -193,13 +201,17 @@ public class DayNightManager : MonoBehaviour
             float nightSpan = (1f - GradNightStart) + GradDawnStart;
             g = inBlend ? Mathf.Lerp(GradDawnStart, GradDayStart, blendT)
                         : (GradNightStart + nightSpan * (elapsed / Mathf.Max(0.01f, coreLength))) % 1f;
-            // Keeps turning the same way: sunset angle -> sunrise angle + 360.
-            pitch = Mathf.Lerp(sunsetAngle, sunriseAngle + 360f, progress);
+            // Keeps turning the same way: sunset direction -> sunrise direction (one more turn), dipping below the horizon.
+            az = Mathf.Lerp(sunsetAzimuth, sunriseAzimuth + 360f, progress);
+            el = sunLowElevation - (sunLowElevation + nightDepth) * Mathf.Sin(progress * Mathf.PI);
         }
 
+        GradientTime = g;
         if (sun != null)
         {
-            sun.transform.rotation = Quaternion.Euler(pitch, yaw, 0f);
+            float azR = az * Mathf.Deg2Rad, elR = el * Mathf.Deg2Rad;
+            Vector3 toSun = new Vector3(Mathf.Cos(elR) * Mathf.Sin(azR), Mathf.Sin(elR), Mathf.Cos(elR) * Mathf.Cos(azR));
+            sun.transform.rotation = Quaternion.LookRotation(-toSun, Vector3.up);
             sun.color = lightColor.Evaluate(g);
             sun.intensity = lightIntensity.Evaluate(g);
         }

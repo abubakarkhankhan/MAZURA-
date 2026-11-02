@@ -36,9 +36,49 @@ public class SkyDecor : MonoBehaviour
     public Vector2 cloudWidth = new Vector2(110f, 190f);
     public Color nightSky = new Color(0.015f, 0.02f, 0.045f);
 
+    [Header("Skybox (SkySeries Freebie). Day and night use their own skybox.")]
+    public bool useSkybox = true;
+    public Material daySkybox;
+    public Material nightSkybox;
+    [Tooltip("Optional extra skies. Empty = falls back to day (morning, evening) or night (midnight).")]
+    public Material morningSkybox;
+    public Material eveningSkybox;
+    public Material midnightSkybox;
+    [Tooltip("Material using the Mazura/SkyBlend shader. It cross-fades two skies smoothly.")]
+    public Material skyBlendMaterial;
+    public float morningExposure = 1f;
+    public float eveningExposure = 1f;
+    public float midnightExposure = 0.8f;
+    [Tooltip("Brightness of the skybox. Lower = darker, more horror.")]
+    public float dayExposure = 1f;
+    public float nightExposure = 1f;
+    [Tooltip("Slow rotation of the skybox in degrees per second (0 = still).")]
+    public float skyboxSpin = 0.4f;
+    [Tooltip("ON: the built-in sun, moon, stars and 3D clouds are hidden while a skybox is used.")]
+    public bool hideBuiltInSkyObjects = true;
+
+    [Header("Sun and clouds follow the Directional Light")]
+    [Tooltip("ON: the whole sky texture is turned so the sun painted in it sits exactly where the Directional Light shines from. The clouds are part of the texture, so they turn slowly together with the sun while the day goes by. OFF: the old constant spin.")]
+    public bool syncSkyToSun = true;
+
     Transform root, cloudPivot, sunT, moonT;
     float baseYaw;
     Material sunMat, moonMat, starMat, cloudMat, cloudMeshMat;
+    Material blendMat;
+    Material[] stageSky = new Material[5];     // 0 morning, 1 day, 2 evening, 3 night, 4 midnight
+    float[] stageExp = new float[5];
+    Color[] stageFog = new Color[5];
+    int curA = -1, curB = -1;
+    Color currentFog;
+    static readonly float[] StopG = { 0f, 0.12f, 0.22f, 0.40f, 0.58f, 0.70f, 0.80f, 0.90f, 0.97f, 1f };
+    static readonly int[] StopStage = { 4, 4, 0, 1, 1, 2, 3, 3, 4, 4 };
+    bool skyboxActive;
+    float boxRotation;
+
+    // Where the sun (or moon) is painted in each sky texture, measured from the textures themselves.
+    // Compass azimuth and height above the horizon, in degrees. Order: morning, day, evening, night, midnight.
+    static readonly float[] BakedAz = { 5.4f, 4.9f, 349.8f, 356.9f, 356.9f };
+    static readonly float[] BakedEl = { 22.8f, 22.0f, 23.7f, 24.0f, 24.0f };
 
     void Start()
     {
@@ -73,6 +113,7 @@ public class SkyDecor : MonoBehaviour
 
         BuildStars(rnd);
         BuildClouds(rnd);
+        SetupSkybox();
     }
 
     void LateUpdate()
@@ -120,13 +161,105 @@ public class SkyDecor : MonoBehaviour
         cloudMat.SetColor("_Color", cloudCol);
         if (cloudMeshMat != null) cloudMeshMat.SetColor("_Color", cloudCol);
 
+        UpdateSkybox(dayF);
+
         // ---- Background and fog colour follow the time of day
         if (tintBackgroundAndFog)
         {
-            Color sky = Color.Lerp(nightSky, daySky, dayF);
+            Color sky = skyboxActive ? currentFog : Color.Lerp(nightSky, daySky, dayF);
             cam.backgroundColor = sky;
             RenderSettings.fogColor = sky;
         }
+    }
+
+    // Uses the day / night skybox materials (copies, so the asset files are never changed).
+void SetupSkybox()
+    {
+        skyboxActive = useSkybox && daySkybox != null && nightSkybox != null && skyBlendMaterial != null;
+        if (!skyboxActive) return;
+
+        stageSky[0] = morningSkybox != null ? morningSkybox : daySkybox;
+        stageSky[1] = daySkybox;
+        stageSky[2] = eveningSkybox != null ? eveningSkybox : daySkybox;
+        stageSky[3] = nightSkybox;
+        stageSky[4] = midnightSkybox != null ? midnightSkybox : nightSkybox;
+        stageExp[0] = morningExposure; stageExp[1] = dayExposure; stageExp[2] = eveningExposure;
+        stageExp[3] = nightExposure; stageExp[4] = midnightExposure;
+
+        stageFog[0] = Color.Lerp(daySky, new Color(0.50f, 0.38f, 0.30f), 0.25f);
+        stageFog[1] = daySky;
+        stageFog[2] = Color.Lerp(daySky, new Color(0.60f, 0.28f, 0.12f), 0.30f);
+        stageFog[3] = nightSky;
+        stageFog[4] = nightSky * 0.6f;
+        currentFog = daySky;
+
+        blendMat = new Material(skyBlendMaterial);
+        cam.clearFlags = CameraClearFlags.Skybox;
+        RenderSettings.skybox = blendMat;
+
+        if (hideBuiltInSkyObjects)
+            foreach (Transform t in root) t.gameObject.SetActive(false);
+    }
+
+    // Day skybox by day, night skybox by night. Around dawn and dusk the sky dims, switches, and brightens again.
+void UpdateSkybox(float dayF)
+    {
+        if (!skyboxActive) return;
+
+        float g = dayNight.GradientTime;
+        int i = 0;
+        while (i < StopG.Length - 2 && g > StopG[i + 1]) i++;
+        int sa = StopStage[i], sb = StopStage[i + 1];
+        float t = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(StopG[i], StopG[i + 1], g));
+
+        if (sa != curA || sb != curB)
+        {
+            curA = sa; curB = sb;
+            blendMat.SetTexture("_TexA", stageSky[sa].GetTexture("_Tex"));
+            blendMat.SetTexture("_TexB", stageSky[sb].GetTexture("_Tex"));
+            blendMat.SetColor("_TintA", stageSky[sa].HasProperty("_Tint") ? stageSky[sa].GetColor("_Tint") : new Color(0.5f, 0.5f, 0.5f, 0.5f));
+            blendMat.SetColor("_TintB", stageSky[sb].HasProperty("_Tint") ? stageSky[sb].GetColor("_Tint") : new Color(0.5f, 0.5f, 0.5f, 0.5f));
+            blendMat.SetFloat("_ExposureA", stageExp[sa]);
+            blendMat.SetFloat("_ExposureB", stageExp[sb]);
+        }
+        blendMat.SetFloat("_Blend", t);
+
+        if (syncSkyToSun && sunLight != null)
+        {
+            // Turn the sky so the painted sun lands where the light comes from (the clouds turn with it).
+            float bakedAz = Mathf.LerpAngle(BakedAz[sa], BakedAz[sb], t);
+            float bakedEl = Mathf.Lerp(BakedEl[sa], BakedEl[sb], t);
+            blendMat.SetMatrix("_SkyRot", SkyRotation(-sunLight.transform.forward, bakedAz, bakedEl, dayNight.sunLowElevation, dayNight.sunHighElevation));
+            blendMat.SetFloat("_UseSkyRot", 1f);
+        }
+        else
+        {
+            boxRotation = (boxRotation + skyboxSpin * Time.deltaTime) % 360f;
+            blendMat.SetFloat("_Rotation", boxRotation);
+            blendMat.SetFloat("_UseSkyRot", 0f);
+        }
+        if (RenderSettings.skybox != blendMat) RenderSettings.skybox = blendMat;
+
+        currentFog = Color.Lerp(stageFog[sa], stageFog[sb], t);
+    }
+
+    /// <summary>
+    /// Rotation for the sky texture. toSun = direction from the player towards the sun (world space).
+    /// bakedAz / bakedEl = where the sun is painted in the texture. The sky is turned around the vertical axis
+    /// until the azimuths match, then tilted a little (only between minEl and maxEl) so the heights match too.
+    /// The tilt is kept small on purpose, because the horizon glow in the texture tilts with it.
+    /// </summary>
+    public static Matrix4x4 SkyRotation(Vector3 toSun, float bakedAz, float bakedEl, float minEl, float maxEl)
+    {
+        float tAz = Mathf.Atan2(toSun.x, toSun.z) * Mathf.Rad2Deg;
+        float tEl = Mathf.Asin(Mathf.Clamp(toSun.normalized.y, -1f, 1f)) * Mathf.Rad2Deg;
+        tEl = Mathf.Clamp(tEl, minEl, maxEl);
+        Quaternion yawQ = Quaternion.AngleAxis(Mathf.DeltaAngle(bakedAz, tAz), Vector3.up);
+        float a = tAz * Mathf.Deg2Rad;
+        Vector3 horizontal = new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a));
+        Vector3 axis = Vector3.Cross(Vector3.up, horizontal);
+        Quaternion tiltQ = Quaternion.AngleAxis(-(tEl - bakedEl), axis);
+        return Matrix4x4.Rotate(tiltQ * yawQ);
     }
 
     void OnDestroy()
