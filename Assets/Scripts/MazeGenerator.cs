@@ -78,6 +78,16 @@ public class MazeGenerator : MonoBehaviour
     [SerializeField] private int decorationCount = 250;
     [SerializeField] private float decorationScale = 0.7f;
 
+    [Header("Resource nodes (gathering: trees = axe, rocks = pickaxe)")]
+    [Range(0f, 1f)] [SerializeField] private float treeNodeShare = 0.4f;
+    [Range(0f, 1f)] [SerializeField] private float rockNodeShare = 0.25f;
+    [Tooltip("Share of the rock nodes that are gem rocks (the rest give plain Stone).")]
+    [Range(0f, 1f)] [SerializeField] private float gemShareOfRockNodes = 0.5f;
+    [Tooltip("Crystal model placed on top of gem rocks (e.g. Items/Mineral.fbx). Empty = a simple cube.")]
+    [SerializeField] private GameObject crystalPrefab;
+    [Tooltip("Emissive materials in this order: Ruby, Emerald, Sapphire, Amber.")]
+    [SerializeField] private Material[] gemMaterials;
+
     // Wall data. vWall[x,y] = vertical wall on the WEST side of cell (x,y); x = width is the east border.
     // hWall[x,y] = horizontal wall on the SOUTH side of cell (x,y); y = height is the north border.
     private const float VExtraT = 0.03f; // extra thickness / length of vertical walls (metres)
@@ -701,7 +711,166 @@ private GameObject MakeCube(string objName, Transform parent, Vector3 localPos, 
             deco.transform.localPosition = CellCenter(cell) + new Vector3(signX * inset, 0f, signZ * inset);
             deco.transform.localRotation = Quaternion.Euler(0f, (float)(rng.NextDouble() * 360.0), 0f);
             deco.transform.localScale = Vector3.one * decorationScale * Mathf.Lerp(0.8f, 1.3f, (float)rng.NextDouble());
-            SetStatic(deco);
+            if (!TryMakeResourceNode(deco, rng)) SetStatic(deco);
+        }
+    }
+
+    // ---------------------------------------------------------------- resource nodes
+
+    // Right-click > "Convert Decorations To Resource Nodes": turns a share of the trees and rocks that are
+    // already in the scene into ResourceNodes, WITHOUT regenerating the maze.
+    [ContextMenu("Convert Decorations To Resource Nodes")]
+    public void ConvertDecorationsToNodes()
+    {
+        Transform holder = transform.Find(RootName + "/Decorations");
+        if (holder == null)
+        {
+            Debug.LogWarning("MazeGenerator: no Decorations found. Generate the maze first.", this);
+            return;
+        }
+
+        System.Random rng = new System.Random(detailSeed + 555);
+        int trees = 0, stones = 0, gems = 0;
+        foreach (Transform deco in holder)
+        {
+            if (deco.GetComponent<ResourceNode>() != null) continue; // already a node
+            if (!TryMakeResourceNode(deco.gameObject, rng)) continue;
+
+            ResourceNode node = deco.GetComponent<ResourceNode>();
+            if (node.nodeType == NodeType.Tree) trees++;
+            else if (node.drops.Count > 0 && node.drops[0].item != ItemType.Stone) gems++;
+            else stones++;
+        }
+        Debug.Log("MazeGenerator: made " + trees + " tree nodes, " + stones + " stone nodes, " + gems + " gem nodes.", this);
+
+#if UNITY_EDITOR
+        if (!Application.isPlaying) EditorSceneManager.MarkSceneDirty(gameObject.scene);
+#endif
+    }
+
+    // Maybe turns one decoration into a ResourceNode (adds collider + component). Returns true if it did.
+    private bool TryMakeResourceNode(GameObject deco, System.Random rng)
+    {
+        bool isRock = deco.name.Contains("Rock");
+        float share = isRock ? rockNodeShare : treeNodeShare;
+        if (rng.NextDouble() >= share) return false;
+
+        Renderer[] rs = deco.GetComponentsInChildren<Renderer>();
+        if (rs.Length == 0) return false;
+        Bounds b = rs[0].bounds;
+        for (int i = 1; i < rs.Length; i++) b.Encapsulate(rs[i].bounds);
+
+#if UNITY_EDITOR
+        // Nodes shake and hide at runtime, so they must not be static-batched.
+        foreach (Transform t in deco.GetComponentsInChildren<Transform>(true)) t.gameObject.isStatic = false;
+#endif
+
+        ResourceNode node = deco.AddComponent<ResourceNode>();
+        node.hitsRequired = 4;
+        node.respawnTime = 90f;
+
+        if (!isRock)
+        {
+            AddTreeCollider(deco, b);
+            node.nodeType = NodeType.Tree;
+            node.requiredTool = ToolType.Axe;
+            node.drops.Add(new ResourceDrop { item = ItemType.Wood, minAmount = 3, maxAmount = 5, chance = 1f });
+            deco.name = "TreeNode";
+            return true;
+        }
+
+        AddRockCollider(deco);
+        node.nodeType = NodeType.Stone;
+        node.requiredTool = ToolType.Pickaxe;
+
+        if (rng.NextDouble() < gemShareOfRockNodes)
+        {
+            int g = rng.Next(4); // 0 Ruby, 1 Emerald, 2 Sapphire, 3 Amber
+            ItemType gem = (ItemType)((int)ItemType.Ruby + g);
+            node.drops.Add(new ResourceDrop { item = gem, minAmount = 1, maxAmount = 2, chance = 1f });
+            node.drops.Add(new ResourceDrop { item = ItemType.Stone, minAmount = 1, maxAmount = 2, chance = 0.3f }); // small extra chance
+            AddCrystal(deco, b, g);
+            deco.name = "GemNode_" + gem;
+        }
+        else
+        {
+            node.drops.Add(new ResourceDrop { item = ItemType.Stone, minAmount = 2, maxAmount = 4, chance = 1f });
+            deco.name = "StoneNode";
+        }
+        return true;
+    }
+
+    // Thin capsule around the trunk (the pivot of the tree models is at the foot of the trunk).
+    private static void AddTreeCollider(GameObject deco, Bounds b)
+    {
+        float s = Mathf.Max(0.0001f, deco.transform.lossyScale.x);
+        float radius = Mathf.Clamp(Mathf.Min(b.size.x, b.size.z) * 0.12f, 0.2f, 0.45f);
+        CapsuleCollider cc = deco.AddComponent<CapsuleCollider>();
+        cc.direction = 1;
+        cc.radius = radius / s;
+        cc.height = Mathf.Max(b.size.y, radius * 2f) / s;
+        cc.center = new Vector3(0f, (b.center.y - deco.transform.position.y) / s, 0f);
+    }
+
+    // Convex mesh collider on every mesh of the rock.
+    private static void AddRockCollider(GameObject deco)
+    {
+        foreach (MeshFilter mf in deco.GetComponentsInChildren<MeshFilter>())
+        {
+            if (mf.sharedMesh == null) continue;
+            MeshCollider mc = mf.gameObject.AddComponent<MeshCollider>();
+            mc.sharedMesh = mf.sharedMesh;
+            mc.convex = true;
+        }
+    }
+
+    // Coloured emissive crystal on top of a rock. gemIndex: 0 Ruby, 1 Emerald, 2 Sapphire, 3 Amber.
+    private void AddCrystal(GameObject rock, Bounds rockBounds, int gemIndex)
+    {
+        GameObject crystal;
+        bool fromCube = crystalPrefab == null;
+        if (fromCube)
+        {
+            crystal = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            crystal.transform.SetParent(rock.transform, false);
+        }
+        else crystal = SpawnPrefab(crystalPrefab, rock.transform);
+        crystal.name = "Crystal";
+
+        foreach (Collider c in crystal.GetComponentsInChildren<Collider>())
+        {
+            if (Application.isPlaying) Destroy(c); else DestroyImmediate(c);
+        }
+
+        crystal.transform.rotation = Quaternion.Euler(0f, fromCube ? 45f : 0f, 0f);
+        crystal.transform.position = new Vector3(rockBounds.center.x, rockBounds.max.y, rockBounds.center.z);
+
+        // Scale so the crystal is about 0.55 m big.
+        Renderer[] cr = crystal.GetComponentsInChildren<Renderer>();
+        if (cr.Length > 0)
+        {
+            Bounds cb = cr[0].bounds;
+            for (int i = 1; i < cr.Length; i++) cb.Encapsulate(cr[i].bounds);
+            float ext = Mathf.Max(cb.size.x, Mathf.Max(cb.size.y, cb.size.z));
+            if (ext > 0.001f) crystal.transform.localScale *= 0.55f / ext;
+            if (fromCube) crystal.transform.localScale = Vector3.Scale(crystal.transform.localScale, new Vector3(0.7f, 1.6f, 0.7f));
+
+            // Sit slightly inside the rock.
+            cb = cr[0].bounds;
+            for (int i = 1; i < cr.Length; i++) cb.Encapsulate(cr[i].bounds);
+            crystal.transform.position += Vector3.up * ((rockBounds.max.y - 0.08f) - cb.min.y);
+
+            Material mat = (gemMaterials != null && gemIndex < gemMaterials.Length) ? gemMaterials[gemIndex] : null;
+            if (mat == null) Debug.LogWarning("MazeGenerator: gem materials are not assigned, crystals keep their own material.", this);
+            else
+            {
+                foreach (Renderer r in cr)
+                {
+                    Material[] arr = new Material[r.sharedMaterials.Length];
+                    for (int i = 0; i < arr.Length; i++) arr[i] = mat;
+                    r.sharedMaterials = arr;
+                }
+            }
         }
     }
 
