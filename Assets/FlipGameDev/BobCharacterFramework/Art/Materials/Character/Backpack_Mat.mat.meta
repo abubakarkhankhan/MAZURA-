@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 869e7c10776b81d4ba3f88b4834ecaae
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 379914
+  packageName: Bob Character Framework
+  packageVersion: 1.0
+  assetPath: Assets/FlipGameDev/BobCharacterFramework/Art/Materials/Character/Backpack_Mat.mat
+  uploadId: 925554

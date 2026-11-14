@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 5c1ae4800b04fab459758896757f6c52
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 379914
+  packageName: Bob Character Framework
+  packageVersion: 1.0
+  assetPath: Assets/Starter Assets/Runtime/ThirdPersonController/Character/Animations/PlayerAnimationController.controller
+  uploadId: 925554

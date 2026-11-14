@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 78be7361b12ceb341985797c5d9a1ce4
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 379914
+  packageName: Bob Character Framework
+  packageVersion: 1.0
+  assetPath: Assets/FlipGameDev/BobCharacterFramework/Art/Materials/Character/Cornea_Eye_Mat.mat
+  uploadId: 925554

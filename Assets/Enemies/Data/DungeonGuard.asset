@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c2837af245842d4a88bae56c0044511, type: 3}
+  m_Name: DungeonGuard
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyData
+  displayName: Dungeon Guard
+  biome: 2
+  nightOnly: 0
+  isBoss: 0
+  walkSpeed: 1.9
+  runSpeed: 4.4
+  turnSpeed: 360
+  acceleration: 10
+  wanderRadius: 10
+  idleTime: {x: 1.5, y: 3}
+  patrols: 1
+  canSee: 1
+  sightRange: 17
+  sightAngle: 100
+  hearingRange: 9
+  loseTime: 6
+  alertRadius: 22
+  maxHealth: 95
+  damage: 16
+  attackRange: 1.9
+  attackWindup: 0.6
+  attackCooldown: 1.8
+  lungeDistance: 0
+  knockbackResist: 0.25
+  slamRadius: 0
+  scale: 1
+  tint: {r: 0.72, g: 0.78, b: 1, a: 1}
+  opacity: 1
+  glowColor: {r: 2, g: 1.2, b: 0.2, a: 1}
+  smoke: 0
+  crawls: 0
+  heartbeatRange: 0
+  lootChance: 0.4
+  lootItem: 1
+  lootAmount: {x: 1, y: 2}
+  attackSound: {fileID: 0}
+  hurtSound: {fileID: 0}
+  deathSound: {fileID: 0}
+  alertSound: {fileID: 0}

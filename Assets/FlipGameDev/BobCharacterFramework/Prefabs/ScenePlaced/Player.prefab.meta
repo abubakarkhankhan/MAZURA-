@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: ca219b2946525a64a80af8a5685e031a
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 379914
+  packageName: Bob Character Framework
+  packageVersion: 1.0
+  assetPath: Assets/FlipGameDev/BobCharacterFramework/Prefabs/ScenePlaced/Player.prefab
+  uploadId: 925554

@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 8b040e2c310570d40b90cf164b4b9d72
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 379914
+  packageName: Bob Character Framework
+  packageVersion: 1.0
+  assetPath: Assets/FlipGameDev/BobCharacterFramework/Scripts/Camera/ModulesMain/TPSCameraModule.cs
+  uploadId: 925554

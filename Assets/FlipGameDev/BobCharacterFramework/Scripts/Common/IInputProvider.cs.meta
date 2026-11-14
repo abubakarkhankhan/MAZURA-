@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: c1e5b4ef8001f964880383926e61c050
+AssetOrigin:
+  serializedVersion: 1
+  productId: 379914
+  packageName: Bob Character Framework
+  packageVersion: 1.0
+  assetPath: Assets/FlipGameDev/BobCharacterFramework/Scripts/Common/IInputProvider.cs
+  uploadId: 925554

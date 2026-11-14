@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: f19e8244f0b0cd24cbbf8b7cf44e9685
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 379914
+  packageName: Bob Character Framework
+  packageVersion: 1.0
+  assetPath: Assets/FlipGameDev/BobCharacterFramework/Scripts/Character/FootstepSystem.cs
+  uploadId: 925554

@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: d406f5c1ea0fe474999a54db5511c33f
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 379914
+  packageName: Bob Character Framework
+  packageVersion: 1.0
+  assetPath: Assets/FlipGameDev/BobCharacterFramework/Scripts/Character/Core/CharacterState.cs
+  uploadId: 925554

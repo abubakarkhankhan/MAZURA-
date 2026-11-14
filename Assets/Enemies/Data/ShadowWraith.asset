@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c2837af245842d4a88bae56c0044511, type: 3}
+  m_Name: ShadowWraith
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyData
+  displayName: Shadow Wraith
+  biome: 0
+  nightOnly: 1
+  isBoss: 0
+  walkSpeed: 2.2
+  runSpeed: 5.2
+  turnSpeed: 360
+  acceleration: 12
+  wanderRadius: 12
+  idleTime: {x: 1.5, y: 4}
+  patrols: 0
+  canSee: 1
+  sightRange: 22
+  sightAngle: 120
+  hearingRange: 16
+  loseTime: 7
+  alertRadius: 0
+  maxHealth: 125
+  damage: 32
+  attackRange: 2.1
+  attackWindup: 0.7
+  attackCooldown: 2.4
+  lungeDistance: 0
+  knockbackResist: 0.3
+  slamRadius: 0
+  scale: 1
+  tint: {r: 0.07, g: 0.07, b: 0.1, a: 1}
+  opacity: 0.88
+  glowColor: {r: 1.6, g: 0.1, b: 0.6, a: 1}
+  smoke: 1
+  crawls: 0
+  heartbeatRange: 24
+  fearsLight: 1
+  lootChance: 0.6
+  lootItem: 1
+  lootAmount: {x: 1, y: 3}
+  attackSound: {fileID: 0}
+  hurtSound: {fileID: 0}
+  deathSound: {fileID: 0}
+  alertSound: {fileID: 0}

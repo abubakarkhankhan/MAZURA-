@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 897547a67653df74290ce90c0657e5b7
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 379914
+  packageName: Bob Character Framework
+  packageVersion: 1.0
+  assetPath: Assets/FlipGameDev/BobCharacterFramework/Scripts/Dialogue/JawAudioSync.cs
+  uploadId: 925554

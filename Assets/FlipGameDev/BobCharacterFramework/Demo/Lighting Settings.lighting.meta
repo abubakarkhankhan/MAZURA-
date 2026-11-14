@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 2087e816c710df7478c8cf8c0ee6a18f
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 4890085278179872738
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 379914
+  packageName: Bob Character Framework
+  packageVersion: 1.0
+  assetPath: Assets/FlipGameDev/BobCharacterFramework/Demo/Lighting Settings.lighting
+  uploadId: 925554

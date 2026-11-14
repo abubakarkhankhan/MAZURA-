@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: c6e8b3af171393c4491dd5da62c3e68c
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 379914
+  packageName: Bob Character Framework
+  packageVersion: 1.0
+  assetPath: Assets/FlipGameDev/BobCharacterFramework/Art/Materials/Level/Grid_2.mat
+  uploadId: 925554

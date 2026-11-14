@@ -22,6 +22,11 @@ public class HandHoldState : MonoBehaviour
         if (animator == null) animator = GetComponent<Animator>();
         if (wristLeft == null) wristLeft = FindByName(transform, "Wrist.L");
         if (wristRight == null) wristRight = FindByName(transform, "Wrist.R");
+        if (animator != null && animator.isHuman)
+        {
+            if (wristLeft == null) wristLeft = animator.GetBoneTransform(HumanBodyBones.LeftHand);
+            if (wristRight == null) wristRight = animator.GetBoneTransform(HumanBodyBones.RightHand);
+        }
     }
 
     void Update()
@@ -39,6 +44,8 @@ public class HandHoldState : MonoBehaviour
             Transform c = wrist.GetChild(i);
             if (!c.gameObject.activeSelf) continue;
             if (IsFingerBone(c.name)) continue;
+            // Humanoid rigs (Bob) have palm/thumb bones with no mesh: only count real held objects.
+            if (c.GetComponentInChildren<Renderer>(true) == null) continue;
             return true;
         }
         return false;

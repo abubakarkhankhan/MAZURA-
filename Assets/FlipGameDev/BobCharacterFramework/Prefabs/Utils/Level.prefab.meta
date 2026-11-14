@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 2654da5017d58304284c8b1a04831782
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 379914
+  packageName: Bob Character Framework
+  packageVersion: 1.0
+  assetPath: Assets/FlipGameDev/BobCharacterFramework/Prefabs/Utils/Level.prefab
+  uploadId: 925554

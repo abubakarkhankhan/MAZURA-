@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: 5dc44f5824656c149a8dc914f54e59f5
+AssetOrigin:
+  serializedVersion: 1
+  productId: 379914
+  packageName: Bob Character Framework
+  packageVersion: 1.0
+  assetPath: Assets/FlipGameDev/BobCharacterFramework/Scripts/PlayerManager/PlayerSpawn.cs
+  uploadId: 925554

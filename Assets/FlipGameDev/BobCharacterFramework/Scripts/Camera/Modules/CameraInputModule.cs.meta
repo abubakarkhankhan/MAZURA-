@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: 41031486abeb0584dab2ac23f600ada7
+AssetOrigin:
+  serializedVersion: 1
+  productId: 379914
+  packageName: Bob Character Framework
+  packageVersion: 1.0
+  assetPath: Assets/FlipGameDev/BobCharacterFramework/Scripts/Camera/Modules/CameraInputModule.cs
+  uploadId: 925554

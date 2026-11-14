@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 6ea268664a91b7749af8fafa79d72918
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 379914
+  packageName: Bob Character Framework
+  packageVersion: 1.0
+  assetPath: Assets/FlipGameDev/BobCharacterFramework/Prefabs/Utils/SceneRestarter.prefab
+  uploadId: 925554

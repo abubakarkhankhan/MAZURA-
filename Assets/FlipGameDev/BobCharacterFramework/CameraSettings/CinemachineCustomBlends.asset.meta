@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 083ff179f4641f7479ec7d14678868b7
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 379914
+  packageName: Bob Character Framework
+  packageVersion: 1.0
+  assetPath: Assets/FlipGameDev/BobCharacterFramework/CameraSettings/CinemachineCustomBlends.asset
+  uploadId: 925554

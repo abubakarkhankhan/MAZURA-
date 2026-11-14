@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 9675a238fc8bb4c418b13660d5f28e72
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 379914
+  packageName: Bob Character Framework
+  packageVersion: 1.0
+  assetPath: Assets/FlipGameDev/BobCharacterFramework/Prefabs/ScenePlaced/PlayerInputManager.prefab
+  uploadId: 925554

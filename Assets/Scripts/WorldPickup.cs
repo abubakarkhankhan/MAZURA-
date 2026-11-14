@@ -117,7 +117,7 @@ public class WorldPickup : MonoBehaviour
 
     static Material FindMat(string n)
     {
-        foreach (Renderer r in FindObjectsByType<Renderer>(FindObjectsSortMode.None))
+        foreach (Renderer r in FindObjectsByType<Renderer>())
             foreach (Material m in r.sharedMaterials)
                 if (m != null && m.name == n) return m;
         return null;

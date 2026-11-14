@@ -224,7 +224,7 @@ public static class HUDBuilder
         RectTransform rt = NewRect(name, parent);
         TextMeshProUGUI t = rt.gameObject.AddComponent<TextMeshProUGUI>();
         t.text = text; t.fontSize = size; t.color = color; t.alignment = align; t.fontStyle = style;
-        t.enableWordWrapping = false;
+        t.textWrappingMode = TextWrappingModes.NoWrap;
         t.raycastTarget = false;
         return t;
     }
@@ -453,7 +453,7 @@ public static class HUDBuilder
         camGO.transform.rotation = Quaternion.identity;
 
         // light the icon only: switch the scene lights off for a moment
-        Light[] sceneLights = Object.FindObjectsByType<Light>(FindObjectsSortMode.None);
+        Light[] sceneLights = Object.FindObjectsByType<Light>();
         bool[] was = new bool[sceneLights.Length];
         for (int i = 0; i < sceneLights.Length; i++) { was[i] = sceneLights[i].enabled; sceneLights[i].enabled = false; }
         GameObject lg = new GameObject("IconLight");

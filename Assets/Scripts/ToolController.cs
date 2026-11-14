@@ -73,7 +73,7 @@ public class ToolController : MonoBehaviour
         else if (kb.digit3Key.wasPressedThisFrame) Equip(ToolType.Weapon);
         else if (kb.digit4Key.wasPressedThisFrame) Equip(ToolType.None);
 
-        if (mouse.leftButton.wasPressedThisFrame && Time.time >= nextSwingTime)
+        if (mouse.leftButton.wasPressedThisFrame && Time.time >= nextSwingTime && !ShieldController.IsBlocking)
             Swing();
     }
 
@@ -81,6 +81,7 @@ public class ToolController : MonoBehaviour
     public void Equip(ToolType tool)
     {
         CurrentTool = tool;
+        if (animator != null) animator.SetBool("Armed", tool == ToolType.Weapon);   // sword stance for walk/run
         if (axeModel != null) axeModel.SetActive(tool == ToolType.Axe);
         if (pickaxeModel != null) pickaxeModel.SetActive(tool == ToolType.Pickaxe);
         if (weaponModel != null) weaponModel.SetActive(tool == ToolType.Weapon);

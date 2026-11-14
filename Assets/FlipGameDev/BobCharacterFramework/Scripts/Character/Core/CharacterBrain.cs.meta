@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: ed69a5e06c96a0c44b3ef44bdbed7e4f
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 379914
+  packageName: Bob Character Framework
+  packageVersion: 1.0
+  assetPath: Assets/FlipGameDev/BobCharacterFramework/Scripts/Character/Core/CharacterBrain.cs
+  uploadId: 925554

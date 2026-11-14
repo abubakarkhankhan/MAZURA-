@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: 45f05dab9fa18404cb8fc23efaac4b8d
+AssetOrigin:
+  serializedVersion: 1
+  productId: 379914
+  packageName: Bob Character Framework
+  packageVersion: 1.0
+  assetPath: Assets/FlipGameDev/BobCharacterFramework/InputSystem/PlayerInputActions.cs
+  uploadId: 925554

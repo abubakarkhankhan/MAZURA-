@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: 40f8159560d020b498c44b3f9ea70be6
+AssetOrigin:
+  serializedVersion: 1
+  productId: 379914
+  packageName: Bob Character Framework
+  packageVersion: 1.0
+  assetPath: Assets/FlipGameDev/BobCharacterFramework/Scripts/Character/Modules/UiSpawnerModule.cs
+  uploadId: 925554

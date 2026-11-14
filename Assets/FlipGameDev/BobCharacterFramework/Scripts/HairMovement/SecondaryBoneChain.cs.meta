@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: dbf49f0071dce1a4a9f99df9b7ce883d
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 379914
+  packageName: Bob Character Framework
+  packageVersion: 1.0
+  assetPath: Assets/FlipGameDev/BobCharacterFramework/Scripts/HairMovement/SecondaryBoneChain.cs
+  uploadId: 925554

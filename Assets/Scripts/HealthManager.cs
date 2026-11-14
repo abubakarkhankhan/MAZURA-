@@ -72,7 +72,16 @@ public class HealthManager : MonoBehaviour
         timeSinceDamage = 0f; // restart the regeneration delay
         UpdateHud();
 
+        if (CurrentHealth > 0f) { Animator hitAnim = GetComponentInChildren<Animator>(); if (hitAnim != null) hitAnim.SetTrigger("Hit"); }
         if (CurrentHealth <= 0f) Die();
+    }
+
+    /// <summary>Gives health back (salves, potions, campfire). Never above max, nothing when dead.</summary>
+    public void Heal(float amount)
+    {
+        if (IsDead || amount <= 0f) return;
+        CurrentHealth = Mathf.Min(maxHealth, CurrentHealth + amount);
+        UpdateHud();
     }
 
     // Quick test from the Inspector: right-click the component > "Test: Take 20 Damage".
@@ -105,6 +114,7 @@ public class HealthManager : MonoBehaviour
         {
             animator.SetFloat("Speed", 0f);
             animator.SetFloat("MotionSpeed", 1f);
+            animator.SetTrigger("Die");
         }
 
         if (deathMessage != null) deathMessage.SetActive(true);

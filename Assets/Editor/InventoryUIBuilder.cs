@@ -44,7 +44,7 @@ public static class InventoryUIBuilder
         for (int i = 0; i < names.Length; i++) icons[i] = MakeIconSprite((ItemType)i);
 
         // 2. EventSystem (needed for clicks on UI)
-        if (UnityEngine.Object.FindFirstObjectByType<EventSystem>() == null)
+        if (UnityEngine.Object.FindAnyObjectByType<EventSystem>() == null)
         {
             var es = new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
             es.GetComponent<InputSystemUIInputModule>().AssignDefaultActions();

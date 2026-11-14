@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c2837af245842d4a88bae56c0044511, type: 3}
+  m_Name: ForestStalker
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyData
+  displayName: Forest Stalker
+  biome: 1
+  nightOnly: 0
+  isBoss: 0
+  walkSpeed: 1.3
+  runSpeed: 2.7
+  turnSpeed: 200
+  acceleration: 6
+  wanderRadius: 14
+  idleTime: {x: 1.5, y: 4}
+  patrols: 0
+  canSee: 1
+  sightRange: 26
+  sightAngle: 150
+  hearingRange: 18
+  loseTime: 8
+  alertRadius: 0
+  maxHealth: 160
+  damage: 28
+  attackRange: 2.4
+  attackWindup: 0.85
+  attackCooldown: 3.6
+  lungeDistance: 0
+  knockbackResist: 0.6
+  slamRadius: 0
+  scale: 1
+  tint: {r: 0.82, g: 0.8, b: 0.76, a: 1}
+  opacity: 1
+  glowColor: {r: 2.2, g: 0.35, b: 0.08, a: 1}
+  smoke: 0
+  crawls: 0
+  heartbeatRange: 0
+  lootChance: 0.5
+  lootItem: 1
+  lootAmount: {x: 1, y: 3}
+  attackSound: {fileID: 0}
+  hurtSound: {fileID: 0}
+  deathSound: {fileID: 0}
+  alertSound: {fileID: 0}

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 80003fa3f25c5114b894058ec182a5ef
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 379914
+  packageName: Bob Character Framework
+  packageVersion: 1.0
+  assetPath: Assets/FlipGameDev/BobCharacterFramework/Prefabs/Runtime/PlayerCamera.prefab
+  uploadId: 925554

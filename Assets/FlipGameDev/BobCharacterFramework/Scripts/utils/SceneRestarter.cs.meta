@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: f7bbe55056915924791f030a5a2762a7
+AssetOrigin:
+  serializedVersion: 1
+  productId: 379914
+  packageName: Bob Character Framework
+  packageVersion: 1.0
+  assetPath: Assets/FlipGameDev/BobCharacterFramework/Scripts/utils/SceneRestarter.cs
+  uploadId: 925554

@@ -95,7 +95,7 @@ public class DayNightManager : MonoBehaviour
         if (sun == null) sun = RenderSettings.sun;
         if (sun == null)
         {
-            foreach (Light l in FindObjectsByType<Light>(FindObjectsSortMode.None))
+            foreach (Light l in FindObjectsByType<Light>())
             {
                 if (l.type == LightType.Directional) { sun = l; break; }
             }

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: c573f2f35fc02404a8faf385c18c8dae
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 379914
+  packageName: Bob Character Framework
+  packageVersion: 1.0
+  assetPath: Assets/FlipGameDev/BobCharacterFramework/Prefabs/Runtime/vCams.prefab
+  uploadId: 925554

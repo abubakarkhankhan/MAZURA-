@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 1689dd4a5f3dff9428d16e3c48a8b6ec
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 379914
+  packageName: Bob Character Framework
+  packageVersion: 1.0
+  assetPath: Assets/FlipGameDev/BobCharacterFramework/Scripts/Camera/ModulesMain/TopDownCameraModule.cs
+  uploadId: 925554

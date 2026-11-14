@@ -162,7 +162,7 @@ public class ResourceNode : MonoBehaviour
 
     void ApplyHit()
     {
-        hits++;
+        hits += CraftingState.ToolPower(requiredTool);   // upgraded tools count as several hits
         bool last = hits >= hitsRequired;
         Punch();
         onHit?.Invoke();

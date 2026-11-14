@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 72f5f03cceff96343bca1f393b33406e
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 379914
+  packageName: Bob Character Framework
+  packageVersion: 1.0
+  assetPath: Assets/FlipGameDev/BobCharacterFramework/Prefabs/Runtime/Ui_Controls.prefab
+  uploadId: 925554

@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: 671294778033dd242a8f7f41e5c1db11
+AssetOrigin:
+  serializedVersion: 1
+  productId: 379914
+  packageName: Bob Character Framework
+  packageVersion: 1.0
+  assetPath: Assets/FlipGameDev/BobCharacterFramework/Scripts/Ui/Modules/DeviceDetectionModule.cs
+  uploadId: 925554

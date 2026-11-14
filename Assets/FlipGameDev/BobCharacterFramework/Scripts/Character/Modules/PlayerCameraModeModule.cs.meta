@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: 4e57d43c5f6f00e45ba11496434c659c
+AssetOrigin:
+  serializedVersion: 1
+  productId: 379914
+  packageName: Bob Character Framework
+  packageVersion: 1.0
+  assetPath: Assets/FlipGameDev/BobCharacterFramework/Scripts/Character/Modules/PlayerCameraModeModule.cs
+  uploadId: 925554

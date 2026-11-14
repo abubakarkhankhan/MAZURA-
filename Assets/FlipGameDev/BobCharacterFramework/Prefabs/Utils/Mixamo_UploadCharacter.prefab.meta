@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 518aa14a446450848a461c1ca47d2650
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 379914
+  packageName: Bob Character Framework
+  packageVersion: 1.0
+  assetPath: Assets/FlipGameDev/BobCharacterFramework/Prefabs/Utils/Mixamo_UploadCharacter.prefab
+  uploadId: 925554
