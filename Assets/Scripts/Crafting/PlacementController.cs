@@ -13,6 +13,27 @@ public class PlacementController : MonoBehaviour
 {
     public static PlacementController Instance { get; private set; }
     public static bool IsPlacing { get { return Instance != null && Instance.item != null; } }
+    /// <summary>What is being placed (only meaningful while IsPlacing).</summary>
+    public static CraftItem PlacingItem { get { return IsPlacing ? Instance.item.item : CraftItem.HerbSalve; } }
+
+    /// <summary>Start placing a carried Campfire / Spike Trap / Workbench (hotbar or right after crafting).</summary>
+    public bool BeginItem(CraftItem it)
+    {
+        ToolController tc = ToolController.Instance;
+        CraftingState cs = CraftingState.Instance;
+        if (tc == null || cs == null) return false;
+        Placeable p = it == CraftItem.Campfire ? campfire : (it == CraftItem.SpikeTrap ? trap : (it == CraftItem.Workbench ? workbench : null));
+        if (p == null) return false;
+        if (item != null) Cancel(tc, false);
+        Begin(p, tc, cs);
+        return item != null;
+    }
+
+    public void StopPlacing(bool restoreTool)
+    {
+        ToolController tc = ToolController.Instance;
+        if (tc != null && item != null) Cancel(tc, restoreTool);
+    }
 
     const float MaxReach = 6.5f;
     const float MinReach = 1.1f;
@@ -22,12 +43,15 @@ public class PlacementController : MonoBehaviour
         public CraftItem item;
         public string name, prefabPath;
         public float spacing;      // keep this far from other items of the same kind
+        public float minReach;     // big items stand farther from the player
         public float clearance;    // how far to stand away from a wall when aimed at one
         public GameObject prefab;
+        public float buildTime;    // seconds of hammering to finish it
     }
 
-    readonly Placeable campfire = new Placeable { item = CraftItem.Campfire, name = "CAMPFIRE", prefabPath = "Crafting/Campfire", spacing = 3.5f, clearance = 0.85f };
-    readonly Placeable trap = new Placeable { item = CraftItem.SpikeTrap, name = "SPIKE TRAP", prefabPath = "Crafting/SpikeTrap", spacing = 1.2f, clearance = 0.75f };
+    readonly Placeable campfire = new Placeable { item = CraftItem.Campfire, name = "CAMPFIRE", prefabPath = "Crafting/Campfire", spacing = 3.5f, clearance = 0.85f, buildTime = 3f, minReach = 1.5f };
+    readonly Placeable trap = new Placeable { item = CraftItem.SpikeTrap, name = "SPIKE TRAP", prefabPath = "Crafting/SpikeTrap", spacing = 1.2f, clearance = 0.75f, buildTime = 2.2f };
+    readonly Placeable workbench = new Placeable { item = CraftItem.Workbench, name = "WORKBENCH", prefabPath = "Crafting/WorkbenchPlaced", spacing = 4f, clearance = 1.3f, buildTime = 4.5f, minReach = 2.3f };
 
     Placeable item;
     GameObject ghost;
@@ -71,33 +95,28 @@ public class PlacementController : MonoBehaviour
         Mouse mouse = Mouse.current;
         if (kb == null || mouse == null) return;
 
-        bool free = Cursor.lockState == CursorLockMode.Locked && !CraftingUI.IsOpen;
+        bool free = Cursor.lockState == CursorLockMode.Locked && !CraftingUI.IsOpen && !WorkshopUI.IsOpen && !ConstructionSite.Busy;
 
         // ---- carry hint
-        int nc = cs.Count(CraftItem.Campfire), nt = cs.Count(CraftItem.SpikeTrap);
+        int nc = cs.Count(CraftItem.Campfire), nt = cs.Count(CraftItem.SpikeTrap), nw = cs.Count(CraftItem.Workbench);
         string c = "";
-        if (nc > 0) c += "[5] CAMPFIRE x" + nc;
-        if (nc > 0 && nt > 0) c += "     ";
-        if (nt > 0) c += "[6] SPIKE TRAP x" + nt;
+        if (nc > 0) c += "[5] CAMPFIRE x" + nc + "     ";
+        if (nt > 0) c += "[6] SPIKE TRAP x" + nt + "     ";
+        if (nw > 0) c += "[7] WORKBENCH x" + nw;
+        c = c.Trim();
         if (c != shownCarry) { shownCarry = c; carry.text = c; }
-        carry.alpha = (item == null && free) ? 1f : 0f;
+        carry.alpha = 0f;   // the hotbar shows what you carry now
 
         if (item == null)
         {
             hint.alpha = Mathf.MoveTowards(hint.alpha, 0f, Time.unscaledDeltaTime * 6f);
             if (!free) return;
-            if (kb.digit5Key.wasPressedThisFrame) Begin(campfire, tc, cs);
-            else if (kb.digit6Key.wasPressedThisFrame) Begin(trap, tc, cs);
-            return;
+            return;   // placing starts from the hotbar (Hotbar.cs) or right after crafting
         }
 
         // ---- placing
         hint.alpha = Mathf.MoveTowards(hint.alpha, 1f, Time.unscaledDeltaTime * 8f);
-        bool leave = !free || kb.escapeKey.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame
-                     || kb.digit1Key.wasPressedThisFrame || kb.digit2Key.wasPressedThisFrame || kb.digit3Key.wasPressedThisFrame
-                     || kb.digit4Key.wasPressedThisFrame || kb.tKey.wasPressedThisFrame;
-        if (kb.digit5Key.wasPressedThisFrame && item != campfire) { Cancel(tc, false); Begin(campfire, tc, cs); return; }
-        if (kb.digit6Key.wasPressedThisFrame && item != trap) { Cancel(tc, false); Begin(trap, tc, cs); return; }
+        bool leave = !free || kb.escapeKey.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame || kb.tKey.wasPressedThisFrame;
         if (leave) { Cancel(tc, true); return; }
         if (cs.Count(item.item) <= 0) { Cancel(tc, true); return; }
 
@@ -155,7 +174,7 @@ public class PlacementController : MonoBehaviour
         if (ghost != null) Destroy(ghost);
         ghost = null;
         item = null;
-        if (restoreTool && !TorchController.IsHeld && tc.CurrentTool == ToolType.None && previousTool != ToolType.None) tc.Equip(previousTool);
+        if (restoreTool && !TorchController.IsHeld && tc.CurrentTool == ToolType.None && previousTool != ToolType.None && ToolController.Owns(previousTool)) tc.Equip(previousTool);
     }
 
     // ------------------------------------------------------------------ ghost
@@ -198,8 +217,9 @@ public class PlacementController : MonoBehaviour
         Vector3 flat = p - pl.position; flat.y = 0f;
         bool tooFar = flat.magnitude > MaxReach;
         if (tooFar) p = pl.position + flat.normalized * MaxReach;
-        bool tooClose = flat.magnitude < MinReach;
-        if (tooClose && flat.sqrMagnitude > 0.001f) p = pl.position + flat.normalized * MinReach;
+        float minR = Mathf.Max(MinReach, item.minReach);
+        if (flat.sqrMagnitude < 0.01f) { flat = pl.forward; flat.y = 0f; }
+        if (flat.magnitude < minR) p = pl.position + flat.normalized * minR;
 
         // snap to the ground below
         RaycastHit down;
@@ -215,11 +235,15 @@ public class PlacementController : MonoBehaviour
 
         bool flatGround = n.y > 0.8f;
         NavMeshHit nh;
-        bool onNav = NavMesh.SamplePosition(p, out nh, 0.6f, NavMesh.AllAreas);
-        bool clear = !Physics.CheckSphere(p + Vector3.up * 0.62f, 0.4f, ~0, QueryTriggerInteraction.Ignore);
+        bool onNav = NavMesh.SamplePosition(p, out nh, item == workbench ? 1.3f : 0.6f, NavMesh.AllAreas);
+        float r = item == workbench ? 0.55f : 0.4f;
+        bool clear = true;
+        foreach (Collider c in Physics.OverlapSphere(p + Vector3.up * (r + 0.22f), r, ~0, QueryTriggerInteraction.Ignore))
+            if (!c.transform.IsChildOf(pl)) { clear = false; break; }
         bool apart = true;
         float sp = item.spacing;
         if (item == campfire) { foreach (Campfire cf in Campfire.All) if ((cf.transform.position - p).sqrMagnitude < sp * sp) apart = false; }
+        else if (item == workbench) { foreach (Workbench wb in Object.FindObjectsByType<Workbench>(FindObjectsSortMode.None)) if (wb.isActiveAndEnabled && !wb.transform.IsChildOf(ghost.transform) && (wb.transform.position - p).sqrMagnitude < sp * sp) apart = false; }
         else { foreach (SpikeTrap st in SpikeTrap.All) if ((st.transform.position - p).sqrMagnitude < sp * sp) apart = false; }
 
         valid = flatGround && onNav && clear && apart;
@@ -250,13 +274,12 @@ public class PlacementController : MonoBehaviour
     void Place(ToolController tc, CraftingState cs)
     {
         if (!cs.Consume(item.item)) { Cancel(tc, true); return; }
-        GameObject go = Instantiate(item.prefab, point, Quaternion.Euler(0f, yaw, 0f));
-        go.name = item.name == "CAMPFIRE" ? "Campfire_Placed" : "SpikeTrap_Placed";
-        PlaceFX.Play(PlaceFX.Thud(), point, 0.9f);
-        PlaceFX.Dust(point + Vector3.up * 0.05f, 0.7f, new Color(0.6f, 0.52f, 0.4f, 1f));
-        if (tc.animator != null) tc.animator.SetTrigger("Craft");
+        // it is not there at once: a construction site appears and the player builds it bit by bit
+        string label = item == campfire ? "Campfire" : (item == trap ? "Spike Trap" : "Workbench");
+        ConstructionSite.Begin(item.prefab, point, Quaternion.Euler(0f, yaw, 0f), item.buildTime, label);
+        PlaceFX.Play(PlaceFX.Thud(), point, 0.6f);
 
-        // keep placing while there are more in the bag, else leave the mode
-        if (cs.Count(item.item) <= 0) Cancel(tc, true);
+        // the player now hammers at the site; leave placing mode
+        Cancel(tc, true);
     }
 }

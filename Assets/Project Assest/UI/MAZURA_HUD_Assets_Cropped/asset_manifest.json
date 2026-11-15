@@ -1,0 +1,443 @@
+[
+  {
+    "file": "Panels/health_panel.png",
+    "source_box": [
+      35,
+      12,
+      625,
+      148
+    ]
+  },
+  {
+    "file": "Bars/health_fill_red.png",
+    "source_box": [
+      42,
+      150,
+      343,
+      200
+    ]
+  },
+  {
+    "file": "Bars/health_bar_empty_background.png",
+    "source_box": [
+      350,
+      150,
+      630,
+      200
+    ]
+  },
+  {
+    "file": "Panels/map_pieces_panel.png",
+    "source_box": [
+      650,
+      10,
+      1160,
+      210
+    ]
+  },
+  {
+    "file": "Panels/day_night_clock_panel.png",
+    "source_box": [
+      35,
+      208,
+      730,
+      350
+    ]
+  },
+  {
+    "file": "Icons/moon_icon.png",
+    "source_box": [
+      600,
+      215,
+      728,
+      347
+    ]
+  },
+  {
+    "file": "Bars/day_night_gold_progress_fill.png",
+    "source_box": [
+      745,
+      270,
+      1155,
+      315
+    ]
+  },
+  {
+    "file": "Panels/resource_list_panel_7_rows.png",
+    "source_box": [
+      1180,
+      10,
+      1520,
+      655
+    ]
+  },
+  {
+    "file": "Resource_Icons/resource_wood_log.png",
+    "source_box": [
+      45,
+      358,
+      195,
+      485
+    ]
+  },
+  {
+    "file": "Resource_Icons/resource_stone.png",
+    "source_box": [
+      210,
+      358,
+      360,
+      485
+    ]
+  },
+  {
+    "file": "Resource_Icons/resource_green_herb.png",
+    "source_box": [
+      380,
+      358,
+      530,
+      485
+    ]
+  },
+  {
+    "file": "Resource_Icons/resource_red_ruby.png",
+    "source_box": [
+      550,
+      358,
+      700,
+      485
+    ]
+  },
+  {
+    "file": "Resource_Icons/resource_green_emerald.png",
+    "source_box": [
+      685,
+      358,
+      835,
+      485
+    ]
+  },
+  {
+    "file": "Resource_Icons/resource_blue_sapphire.png",
+    "source_box": [
+      850,
+      358,
+      1000,
+      485
+    ]
+  },
+  {
+    "file": "Resource_Icons/resource_orange_amber.png",
+    "source_box": [
+      990,
+      358,
+      1140,
+      485
+    ]
+  },
+  {
+    "file": "Hotbar/hotbar_slot_normal.png",
+    "source_box": [
+      45,
+      498,
+      230,
+      670
+    ]
+  },
+  {
+    "file": "Hotbar/hotbar_slot_selected_glowing.png",
+    "source_box": [
+      260,
+      498,
+      450,
+      670
+    ]
+  },
+  {
+    "file": "Hotbar/hotbar_slot_disabled.png",
+    "source_box": [
+      480,
+      498,
+      665,
+      670
+    ]
+  },
+  {
+    "file": "Hotbar/hotbar_number_badge_1.png",
+    "source_box": [
+      710,
+      545,
+      785,
+      625
+    ]
+  },
+  {
+    "file": "Hotbar/hotbar_number_badge_2.png",
+    "source_box": [
+      800,
+      545,
+      875,
+      625
+    ]
+  },
+  {
+    "file": "Hotbar/hotbar_number_badge_3.png",
+    "source_box": [
+      890,
+      545,
+      965,
+      625
+    ]
+  },
+  {
+    "file": "Hotbar/hotbar_number_badge_4.png",
+    "source_box": [
+      980,
+      545,
+      1055,
+      625
+    ]
+  },
+  {
+    "file": "Hotbar/hotbar_number_badge_5.png",
+    "source_box": [
+      1070,
+      545,
+      1145,
+      625
+    ]
+  },
+  {
+    "file": "Item_Icons/item_axe.png",
+    "source_box": [
+      40,
+      680,
+      210,
+      840
+    ]
+  },
+  {
+    "file": "Item_Icons/item_pickaxe.png",
+    "source_box": [
+      230,
+      680,
+      400,
+      840
+    ]
+  },
+  {
+    "file": "Item_Icons/item_sword.png",
+    "source_box": [
+      410,
+      680,
+      580,
+      840
+    ]
+  },
+  {
+    "file": "Item_Icons/item_torch.png",
+    "source_box": [
+      590,
+      680,
+      760,
+      840
+    ]
+  },
+  {
+    "file": "Item_Icons/item_campfire.png",
+    "source_box": [
+      770,
+      680,
+      940,
+      840
+    ]
+  },
+  {
+    "file": "Item_Icons/item_spike_trap.png",
+    "source_box": [
+      950,
+      680,
+      1120,
+      840
+    ]
+  },
+  {
+    "file": "Item_Icons/item_wooden_workbench.png",
+    "source_box": [
+      1130,
+      680,
+      1300,
+      840
+    ]
+  },
+  {
+    "file": "Item_Icons/item_wooden_shield.png",
+    "source_box": [
+      1310,
+      680,
+      1490,
+      840
+    ]
+  },
+  {
+    "file": "Decorations/decorative_divider_left.png",
+    "source_box": [
+      270,
+      842,
+      730,
+      915
+    ]
+  },
+  {
+    "file": "Decorations/crosshair.png",
+    "source_box": [
+      730,
+      842,
+      800,
+      915
+    ]
+  },
+  {
+    "file": "Decorations/decorative_divider_right.png",
+    "source_box": [
+      800,
+      842,
+      1260,
+      915
+    ]
+  },
+  {
+    "file": "Panels/stamina_panel_with_boot.png",
+    "source_box": [
+      25,
+      895,
+      495,
+      1000
+    ]
+  },
+  {
+    "file": "Bars/stamina_fill_yellow_green.png",
+    "source_box": [
+      510,
+      920,
+      760,
+      970
+    ]
+  },
+  {
+    "file": "Bars/stamina_fill_low_orange.png",
+    "source_box": [
+      770,
+      920,
+      1015,
+      970
+    ]
+  },
+  {
+    "file": "Bars/stamina_bar_empty_background.png",
+    "source_box": [
+      1020,
+      920,
+      1270,
+      970
+    ]
+  },
+  {
+    "file": "Icons/running_boot_icon.png",
+    "source_box": [
+      1305,
+      895,
+      1405,
+      995
+    ]
+  },
+  {
+    "file": "Icons/lightning_bolt_icon.png",
+    "source_box": [
+      1410,
+      895,
+      1515,
+      995
+    ]
+  },
+  {
+    "file": "Map_Icons/map_socket_empty_1.png",
+    "source_box": [
+      810,
+      48,
+      875,
+      130
+    ]
+  },
+  {
+    "file": "Map_Icons/map_socket_empty_2.png",
+    "source_box": [
+      885,
+      48,
+      950,
+      130
+    ]
+  },
+  {
+    "file": "Map_Icons/map_socket_empty_3.png",
+    "source_box": [
+      960,
+      48,
+      1025,
+      130
+    ]
+  },
+  {
+    "file": "Map_Icons/map_socket_empty_4.png",
+    "source_box": [
+      1035,
+      48,
+      1100,
+      130
+    ]
+  },
+  {
+    "file": "Map_Icons/map_socket_filled_gold_1.png",
+    "source_box": [
+      810,
+      122,
+      875,
+      195
+    ]
+  },
+  {
+    "file": "Map_Icons/map_socket_filled_gold_2.png",
+    "source_box": [
+      885,
+      122,
+      950,
+      195
+    ]
+  },
+  {
+    "file": "Map_Icons/map_socket_filled_gold_3.png",
+    "source_box": [
+      960,
+      122,
+      1025,
+      195
+    ]
+  },
+  {
+    "file": "Map_Icons/map_socket_filled_gold_4.png",
+    "source_box": [
+      1035,
+      122,
+      1100,
+      195
+    ]
+  },
+  {
+    "file": "Icons/sun_icon.png",
+    "source_box": [
+      40,
+      210,
+      195,
+      350
+    ]
+  }
+]

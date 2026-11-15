@@ -53,19 +53,23 @@ public class PlayerCombat : MonoBehaviour
         ToolController tc = ToolController.Instance;
         if (tc == null || tool == ToolType.None) return;
 
-        float baseDamage = (tool == ToolType.Weapon ? swordDamage : (tool == ToolType.Axe ? axeDamage : pickaxeDamage)) * CraftingState.DamageMultiplier(tool);
+        bool isWeapon = tool == ToolType.Weapon;
+        WeaponInfo wi = Weapons.Info;
+        float baseDamage = (isWeapon ? wi.damage : (tool == ToolType.Axe ? axeDamage : pickaxeDamage)) * CraftingState.DamageMultiplier(tool);
+        float useRange = isWeapon ? wi.range : range, useArc = isWeapon ? wi.arc : arc;
+        int useMax = isWeapon ? wi.maxTargets : maxTargets;
         Transform p = tc.transform;
         Vector3 origin = p.position + Vector3.up * 1f;
 
         found.Clear();
-        Collider[] hits = Physics.OverlapSphere(origin, range, ~0, QueryTriggerInteraction.Ignore);
+        Collider[] hits = Physics.OverlapSphere(origin, useRange, ~0, QueryTriggerInteraction.Ignore);
         foreach (Collider c in hits)
         {
             EnemyBase e = c.GetComponentInParent<EnemyBase>();
             if (e == null || e.IsDead || found.Contains(e)) continue;
             Vector3 to = e.transform.position - p.position;
             to.y = 0f;
-            if (to.sqrMagnitude > 0.04f && Vector3.Angle(p.forward, to) > arc * 0.5f) continue;
+            if (to.sqrMagnitude > 0.04f && Vector3.Angle(p.forward, to) > useArc * 0.5f) continue;
             if (EnemyBase.WallBetween(origin + Vector3.up * 0.3f, ChestPoint(e))) continue;   // no hits through maze walls
             found.Add(e);
         }
@@ -74,7 +78,7 @@ public class PlayerCombat : MonoBehaviour
         found.Sort((a, b) => (a.transform.position - p.position).sqrMagnitude.CompareTo((b.transform.position - p.position).sqrMagnitude));
 
         bool anyCrit = false;
-        int n = Mathf.Min(maxTargets, found.Count);
+        int n = Mathf.Min(useMax, found.Count);
         for (int i = 0; i < n; i++)
         {
             EnemyBase e = found[i];
@@ -83,6 +87,7 @@ public class PlayerCombat : MonoBehaviour
             Vector3 point = ChestPoint(e);
             bool wasAlive = !e.IsDead;
             e.TakeDamage(dmg, p.position);
+            if (isWeapon && wi.slowTime > 0f && !e.IsDead) e.Slow(wi.slow, wi.slowTime);   // battle axe slows, war hammer stuns
             CombatUI.SpawnNumber(point + Vector3.up * 0.3f, dmg, crit, wasAlive && e.IsDead);
             Sparks(point, (point - origin).normalized, crit);
             Play(crit ? critClip : hitClip, point, crit ? 1f : 0.85f);
@@ -90,7 +95,7 @@ public class PlayerCombat : MonoBehaviour
         }
 
         CameraShake cs = CameraShake.Instance;
-        if (cs != null) cs.Shake(anyCrit ? 0.075f : 0.04f, anyCrit ? 0.22f : 0.14f);
+        if (cs != null) cs.Shake((anyCrit ? 0.075f : 0.04f) + (isWeapon ? wi.shake : 0f), anyCrit ? 0.22f : 0.14f);
         HitStop(tc.animator, anyCrit ? 0.1f : 0.06f);
     }
 

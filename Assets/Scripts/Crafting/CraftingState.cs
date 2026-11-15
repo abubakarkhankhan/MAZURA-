@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>What a recipe makes.</summary>
-public enum CraftItem { HerbSalve, HealthPotion, Torch, Campfire, SpikeTrap, Shield }
+public enum CraftItem { HerbSalve, HealthPotion, Torch, Campfire, SpikeTrap, Shield, Workbench, Sword, Spear, BattleAxe, WarHammer }
 public enum CraftCategory { Tools, Survival, Build }
 
 /// <summary>One ingredient line of a recipe.</summary>
@@ -23,6 +23,8 @@ public class Recipe
     public CraftCategory category;
     public Ingredient[] cost;
     public bool isToolUpgrade;
+    /// <summary>Can be made anywhere from the hand-crafting menu [C] (otherwise only at a Workbench).</summary>
+    public bool byHand;
     public ToolType tool;
     public int tier;                 // tool upgrades: the tier you get (1 or 2)
     public CraftItem item;           // everything else
@@ -45,6 +47,7 @@ public class CraftingState : MonoBehaviour
     public static readonly string[] TierNames = { "Basic", "Reinforced", "Gemforged" };
 
     readonly int[] toolTier = new int[3];   // Axe, Pickaxe, Weapon
+    readonly bool[] hasTool = new bool[3];  // the player starts with no tools (axe + pickaxe are in the starter chest)
     readonly Dictionary<CraftItem, int> items = new Dictionary<CraftItem, int>();
     public List<Recipe> Recipes { get; private set; }
 
@@ -70,6 +73,8 @@ public class CraftingState : MonoBehaviour
     {
         List<Recipe> r = new List<Recipe>();
         // ---- tools
+        r.Add(Item("sword0", "Sword", CraftItem.Sword, CraftCategory.Tools, "A plain iron blade on a leather grip. Better than bare hands.", "Goes into your hotbar",
+            new Ingredient(ItemType.Wood, 3), new Ingredient(ItemType.Stone, 6)));
         r.Add(Tool("axe1", "Reinforced Axe", ToolType.Axe, 1, "Stone-weighted head on a hardwood haft.", "Trees fall in half the swings",
             new Ingredient(ItemType.Wood, 6), new Ingredient(ItemType.Stone, 6)));
         r.Add(Tool("axe2", "Gemforged Axe", ToolType.Axe, 2, "Emerald-edged and bound in amber. It bites like it is hungry.", "Trees fall in a third of the swings",
@@ -84,6 +89,12 @@ public class CraftingState : MonoBehaviour
             new Ingredient(ItemType.Ruby, 3), new Ingredient(ItemType.Sapphire, 2), new Ingredient(ItemType.Amber, 4)));
         r.Add(Item("shield", "Wooden Shield", CraftItem.Shield, CraftCategory.Tools, "Oak planks bound with an iron rim. Heavy, but it holds.", "Hold Right Mouse to block 85% of a hit",
             new Ingredient(ItemType.Wood, 8), new Ingredient(ItemType.Stone, 4), new Ingredient(ItemType.Amber, 1)));
+        r.Add(Item("spear", "Spear", CraftItem.Spear, CraftCategory.Tools, "A long ash shaft with a sharpened stone point.", "Long reach, quick thrusts, pierces a line of enemies   [Q] switch",
+            new Ingredient(ItemType.Wood, 7), new Ingredient(ItemType.Stone, 3)));
+        r.Add(Item("battleaxe", "Battle Axe", CraftItem.BattleAxe, CraftCategory.Tools, "A crescent blade on a long haft. Slow, brutal, wide.", "Huge cleave around you, slows what it hits   [Q] switch",
+            new Ingredient(ItemType.Wood, 6), new Ingredient(ItemType.Stone, 10), new Ingredient(ItemType.Ruby, 1)));
+        r.Add(Item("warhammer", "War Hammer", CraftItem.WarHammer, CraftCategory.Tools, "A block of stone bound to a root-wrapped handle.", "Crushing slam that stuns enemies   [Q] switch",
+            new Ingredient(ItemType.Wood, 5), new Ingredient(ItemType.Stone, 12), new Ingredient(ItemType.Sapphire, 1)));
         // ---- survival
         r.Add(Item("salve", "Herb Salve", CraftItem.HerbSalve, CraftCategory.Survival, "Crushed maze herbs. Smells awful, works well.", "Heals 30 HP over 4 s   [H]",
             new Ingredient(ItemType.Herb, 2)));
@@ -96,6 +107,14 @@ public class CraftingState : MonoBehaviour
             new Ingredient(ItemType.Wood, 8), new Ingredient(ItemType.Stone, 4)));
         r.Add(Item("trap", "Spike Trap", CraftItem.SpikeTrap, CraftCategory.Build, "Sharpened stakes set in stone. Hidden in the dark.", "Hurts and slows what steps on it",
             new Ingredient(ItemType.Wood, 4), new Ingredient(ItemType.Stone, 3)));
+        r.Add(Item("workbench", "Workbench", CraftItem.Workbench, CraftCategory.Build, "A sturdy table with a vice and an anvil.", "Place it to unlock the Workshop",
+            new Ingredient(ItemType.Wood, 10), new Ingredient(ItemType.Stone, 4)));
+
+        foreach (Recipe x in r)
+        {
+            x.byHand = x.id == "workbench" || x.id == "torch" || x.id == "campfire";
+            x.craftTime = x.isToolUpgrade || x.category == CraftCategory.Tools ? 3.2f : (x.id == "workbench" ? 3.5f : 2.4f);
+        }
         return r;
     }
 
@@ -115,6 +134,24 @@ public class CraftingState : MonoBehaviour
     {
         int i = (int)tool;
         return i >= 0 && i < 3 ? toolTier[i] : 0;
+    }
+
+    /// <summary>Does the player own this tool at all (found or crafted)?</summary>
+    public bool HasTool(ToolType tool)
+    {
+        int i = (int)tool;
+        return i >= 0 && i < 3 && hasTool[i];
+    }
+
+    /// <summary>Gives the player a tool (starter chest, crafting the sword).</summary>
+    public void GiveTool(ToolType tool)
+    {
+        int i = (int)tool;
+        if (i < 0 || i >= 3 || hasTool[i]) return;
+        hasTool[i] = true;
+        if (tool == ToolType.Weapon && Count(CraftItem.Sword) == 0) items[CraftItem.Sword] = 1;
+        ApplyToolLooks();
+        OnChanged?.Invoke();
     }
 
     public int Count(CraftItem item)
@@ -139,11 +176,14 @@ public class CraftingState : MonoBehaviour
     {
         if (r.isToolUpgrade)
         {
+            if (!HasTool(r.tool)) return "You need a " + (r.tool == ToolType.Weapon ? "Sword" : r.tool.ToString()) + " first";
             int cur = TierOf(r.tool);
             if (cur >= r.tier) return "Already owned";
             if (cur < r.tier - 1) return "Needs " + TierNames[r.tier - 1] + " first";
         }
         if (!r.isToolUpgrade && r.item == CraftItem.Shield && Count(CraftItem.Shield) > 0) return "Already owned";
+        if (!r.isToolUpgrade && r.item == CraftItem.Sword && Count(CraftItem.Sword) > 0) return "Already owned";
+        if (!r.isToolUpgrade && Weapons.KindOf(r.item).HasValue && r.item != CraftItem.Sword && Count(r.item) > 0) return "Already owned";
         Inventory inv = Inventory.Instance;
         if (inv == null) return "No inventory";
         foreach (Ingredient g in r.cost) if (!inv.Has(g.item, g.amount)) return "Not enough materials";
@@ -157,6 +197,7 @@ public class CraftingState : MonoBehaviour
         Inventory inv = Inventory.Instance;
         foreach (Ingredient g in r.cost) inv.Remove(g.item, g.amount);
         if (r.isToolUpgrade) { toolTier[(int)r.tool] = r.tier; ApplyToolLooks(); }
+        else if (Weapons.KindOf(r.item).HasValue) { hasTool[(int)ToolType.Weapon] = true; items[r.item] = 1; ApplyToolLooks(); Weapons.Select(Weapons.KindOf(r.item).Value); }
         else items[r.item] = Count(r.item) + 1;
         OnChanged?.Invoke();
         return true;

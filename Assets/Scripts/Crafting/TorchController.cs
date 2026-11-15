@@ -206,11 +206,10 @@ public class TorchController : MonoBehaviour, IFearLight
         if (model == null) { Setup(tc); if (model == null) return; }
 
         Keyboard kb = Keyboard.current;
-        bool canAct = kb != null && Cursor.lockState == CursorLockMode.Locked && !CraftingUI.IsOpen;
+        bool canAct = kb != null && Cursor.lockState == CursorLockMode.Locked && !CraftingUI.IsOpen && !WorkshopUI.IsOpen;
         if (canAct)
         {
             if (kb.tKey.wasPressedThisFrame) { if (held) Stow(tc, false); else TryLight(tc); }
-            else if (kb.digit4Key.wasPressedThisFrame && !held) TryLight(tc);
         }
 
         // took the axe / pickaxe / sword again
@@ -230,6 +229,25 @@ public class TorchController : MonoBehaviour, IFearLight
         }
         Animate();
         UpdateHud();
+    }
+
+    /// <summary>Has a torch to light (one in the bag, or a half-burnt one) or is holding one.</summary>
+    public static bool Available
+    {
+        get
+        {
+            if (Instance == null) return false;
+            CraftingState cs = CraftingState.Instance;
+            return Instance.held || Instance.remaining > 0f || (cs != null && cs.Count(CraftItem.Torch) > 0);
+        }
+    }
+
+    /// <summary>Light or put away the torch (hotbar).</summary>
+    public static void Toggle()
+    {
+        ToolController tc = ToolController.Instance;
+        if (Instance == null || tc == null) return;
+        if (Instance.held) Instance.Stow(tc, false); else Instance.TryLight(tc);
     }
 
     void TryLight(ToolController tc)
@@ -255,7 +273,7 @@ public class TorchController : MonoBehaviour, IFearLight
     void Stow(ToolController tc, bool burnedOut)
     {
         SetHeld(false);
-        tc.Equip(previous == ToolType.None ? ToolType.Axe : previous);
+        tc.Equip(previous != ToolType.None && ToolController.Owns(previous) ? previous : ToolType.None);
         if (sfx != null) sfx.PlayOneShot(outClip, burnedOut ? 0.8f : 0.45f);
         if (burnedOut && burst != null) { }
     }

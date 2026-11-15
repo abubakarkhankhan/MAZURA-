@@ -56,7 +56,15 @@ public class ToolController : MonoBehaviour
 
     void Start()
     {
-        Equip(ToolType.Axe);
+        Equip(ToolType.None);   // the player starts with empty hands (tools come from the starter chest / Workshop)
+    }
+
+    /// <summary>True if the player owns this tool (always true for empty hands).</summary>
+    public static bool Owns(ToolType tool)
+    {
+        if (tool == ToolType.None) return true;
+        CraftingState cs = CraftingState.Instance;
+        return cs == null || cs.HasTool(tool);
     }
 
     void Update()
@@ -68,18 +76,20 @@ public class ToolController : MonoBehaviour
         // A menu is open (cursor free): ignore tool input completely.
         if (Cursor.lockState != CursorLockMode.Locked) return;
 
-        if (kb.digit1Key.wasPressedThisFrame) Equip(ToolType.Axe);
-        else if (kb.digit2Key.wasPressedThisFrame) Equip(ToolType.Pickaxe);
-        else if (kb.digit3Key.wasPressedThisFrame) Equip(ToolType.Weapon);
-        else if (kb.digit4Key.wasPressedThisFrame) Equip(ToolType.None);
+        // keys 1-5 are read by Hotbar.cs
 
-        if (mouse.leftButton.wasPressedThisFrame && Time.time >= nextSwingTime && !ShieldController.IsBlocking)
+        if (mouse.leftButton.wasPressedThisFrame && Time.time >= nextSwingTime && !ShieldController.IsBlocking && !ConstructionSite.Busy)
             Swing();
     }
 
     /// <summary>Select a tool, show its model and update the HUD.</summary>
     public void Equip(ToolType tool)
     {
+        if (!Owns(tool))
+        {
+            HudMessage.Show(tool == ToolType.Weapon ? "No weapon yet - craft one at a Workbench" : "No " + tool + " yet - check the chest at the start");
+            return;
+        }
         CurrentTool = tool;
         if (animator != null) animator.SetBool("Armed", tool == ToolType.Weapon);   // sword stance for walk/run
         if (axeModel != null) axeModel.SetActive(tool == ToolType.Axe);
@@ -107,7 +117,7 @@ public class ToolController : MonoBehaviour
             {
                 case ToolType.Axe: animator.SetTrigger(ChopHash); break;
                 case ToolType.Pickaxe: animator.SetTrigger(MineHash); break;
-                default: animator.SetTrigger(AttackHash); break;
+                default: animator.SetTrigger(Weapons.AnimFor(CurrentTool)); break;
             }
         }
 

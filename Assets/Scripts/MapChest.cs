@@ -8,9 +8,10 @@ using UnityEngine.InputSystem;
 [System.Serializable]
 public class ChestLoot
 {
-    public enum Kind { Map, Resource, Crafted }
+    public enum Kind { Map, Resource, Crafted, Tool }
     public Kind kind;
     public ItemType item;
+    public ToolType tool;
     public CraftItem crafted;
     public int amount = 1;
 
@@ -19,6 +20,7 @@ public class ChestLoot
         switch (kind)
         {
             case Kind.Map: return Resources.Load<Sprite>("ChestUI/icon_map");
+            case Kind.Tool: return Resources.Load<Sprite>(tool == ToolType.Axe ? "WorkshopUI/icon_axe" : tool == ToolType.Pickaxe ? "WorkshopUI/icon_pickaxe" : "WorkshopUI/icon_sword");
             case Kind.Resource:
                 if (item == ItemType.Wood) return Resources.Load<Sprite>("WorkshopUI/res_wood");
                 if (item == ItemType.Stone) return Resources.Load<Sprite>("WorkshopUI/res_stone");
@@ -42,6 +44,7 @@ public class ChestLoot
         switch (kind)
         {
             case Kind.Map: return "Map Piece";
+            case Kind.Tool: return tool == ToolType.Weapon ? "Sword" : tool.ToString();
             case Kind.Resource: return item == ItemType.Herb ? "Herbs" : item.ToString();
             default:
                 switch (crafted)
@@ -79,6 +82,8 @@ public class MapChest : MonoBehaviour
     [Header("Loot")]
     [Tooltip("Chance (0-1) that the chest also holds a crafted item (potion, salve or torch).")]
     [Range(0f, 1f)] [SerializeField] private float craftedChance = 0.45f;
+    [Tooltip("The chest next to the start: holds the Axe and the Pickaxe instead of random loot.")]
+    [SerializeField] private bool starterKit;
 
     public List<ChestLoot> Loot { get; private set; }
 
@@ -249,6 +254,13 @@ public class MapChest : MonoBehaviour
     void RollLoot()
     {
         Loot.Clear();
+        if (starterKit)
+        {
+            Loot.Add(new ChestLoot { kind = ChestLoot.Kind.Tool, tool = ToolType.Axe, amount = 1 });
+            Loot.Add(new ChestLoot { kind = ChestLoot.Kind.Tool, tool = ToolType.Pickaxe, amount = 1 });
+            Loot.Add(new ChestLoot { kind = ChestLoot.Kind.Resource, item = ItemType.Wood, amount = 3 });
+            return;
+        }
         MapManager mm = MapManager.Instance;
         if (mm != null && mm.CollectedPieces < mm.MaxPieces)
             Loot.Add(new ChestLoot { kind = ChestLoot.Kind.Map, amount = 1 });
@@ -294,6 +306,12 @@ public class MapChest : MonoBehaviour
                     HudMessage.Float("+1 Map Piece", new Color(1f, 0.82f, 0.4f));
                 else
                     HudMessage.Show("Map is already complete");
+                break;
+            case ChestLoot.Kind.Tool:
+                if (CraftingState.Instance == null) return false;
+                CraftingState.Instance.GiveTool(l.tool);
+                HudMessage.Float("+ " + l.DisplayName() + "  [" + ((int)l.tool + 1) + "]", new Color(0.85f, 0.9f, 1f));
+                if (ToolController.Instance != null && ToolController.Instance.CurrentTool == ToolType.None && !TorchController.IsHeld) ToolController.Instance.Equip(l.tool);
                 break;
             case ChestLoot.Kind.Resource:
                 if (Inventory.Instance == null) return false;

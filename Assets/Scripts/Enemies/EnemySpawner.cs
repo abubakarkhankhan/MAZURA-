@@ -146,6 +146,7 @@ public class EnemySpawner : MonoBehaviour
     void Update()
     {
         if (!FindPlayer()) return;
+        if (DungeonZone.PlayerInside) return;   // the dungeon has its own guards
 
         Recycle();
 
@@ -174,21 +175,30 @@ public class EnemySpawner : MonoBehaviour
         {
             EnemyBase e = EnemyBase.All[i];
             if (e == null || e.IsDead || e.IsHuntingPlayer || e.data.isBoss) continue;
+            if (DungeonZone.Contains(e.transform.position)) continue;   // dungeon residents stay
             if ((e.transform.position - player.position).sqrMagnitude < recycleDistance * recycleDistance) continue;
             nightSpawned.Remove(e);
             e.Vanish();
         }
     }
 
+    // dungeon creatures live only in the dungeon
+    static bool ForestType(SpawnType t)
+    {
+        if (t.prefab == null) return false;
+        EnemyBase e = t.prefab.GetComponent<EnemyBase>();
+        return e == null || e.data == null || e.data.biome != EnemyBiome.Dungeon;
+    }
+
     GameObject PickPrefab(bool night)
     {
         float total = 0f;
-        foreach (SpawnType t in types) if (t.prefab != null) total += night ? t.nightWeight : t.dayWeight;
+        foreach (SpawnType t in types) if (ForestType(t)) total += night ? t.nightWeight : t.dayWeight;
         if (total <= 0f) return null;
         float r = Random.value * total;
         foreach (SpawnType t in types)
         {
-            if (t.prefab == null) continue;
+            if (!ForestType(t)) continue;
             r -= night ? t.nightWeight : t.dayWeight;
             if (r <= 0f) return t.prefab;
         }

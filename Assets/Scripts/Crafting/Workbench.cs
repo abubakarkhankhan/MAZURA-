@@ -69,7 +69,7 @@ public class Workbench : MonoBehaviour
         Keyboard kb = Keyboard.current;
         if (kb == null || !kb.eKey.wasPressedThisFrame) return;
         if (WorkshopUI.IsOpen) { WorkshopUI.Close(); return; }
-        if (Cursor.lockState != CursorLockMode.Locked || InventoryUI.IsOpen) return;
+        if (Cursor.lockState != CursorLockMode.Locked || InventoryUI.IsOpen || InventoryWindow.IsOpen) return;
         HealthManager hm = ToolController.Instance != null ? ToolController.Instance.GetComponent<HealthManager>() : null;
         if (hm != null && hm.IsDead) return;
         WorkshopUI.Open();

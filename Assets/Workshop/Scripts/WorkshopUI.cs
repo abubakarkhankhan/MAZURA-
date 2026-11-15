@@ -21,8 +21,8 @@ public class WorkshopUI : MonoBehaviour
     public static bool IsOpen { get; private set; }
 
     enum Cat { Tools, Healing, Light, TrapsCamp }
-    static readonly string[] CatLabels = { "Tools", "Healing", "Light", "Traps &\nCamp" };
-    static readonly string[] CatIcons = { "cat_tools", "cat_healing", "cat_light", "cat_traps" };
+    static readonly string[] CatLabels = { "Tools", "Healing", "Weapons", "Traps &\nCamp" };
+    static readonly string[] CatIcons = { "cat_tools", "cat_healing", "icon_sword", "cat_traps" };
 
     static readonly Color Parchment = new Color(0.95f, 0.87f, 0.70f);
     static readonly Color Gold = new Color(1f, 0.80f, 0.42f);
@@ -41,6 +41,9 @@ public class WorkshopUI : MonoBehaviour
     class Tab { public Image frame, icon; public TextMeshProUGUI label; }
     readonly Tab[] tabs = new Tab[4];
     Cat cat = Cat.Light;
+    bool handMode;            // opened with [C] away from a Workbench: only hand recipes can be made
+    TextMeshProUGUI modeText;
+    float nextCraftAnim;
 
     class Card
     {
@@ -65,7 +68,9 @@ public class WorkshopUI : MonoBehaviour
     class Res { public ItemType type; public Image icon; public TextMeshProUGUI count; }
     readonly List<Res> resources = new List<Res>();
     class Slot { public Image frame, icon; public TextMeshProUGUI count, sub; }
-    readonly Slot[] slots = new Slot[6];
+    readonly Slot[] slots = new Slot[Hotbar.Size];
+    int dragFrom = -1;
+    Image dragIcon;
 
     // crafting progress
     Recipe crafting;
@@ -90,7 +95,10 @@ public class WorkshopUI : MonoBehaviour
         new GameObject("WorkshopUI").AddComponent<WorkshopUI>();
     }
 
-    public static void Open() { if (Instance != null) Instance.DoOpen(); }
+    /// <summary>Opens the full Workshop (standing at a Workbench).</summary>
+    public static void Open() { if (Instance != null) Instance.DoOpen(false); }
+    /// <summary>Opens hand crafting [C]: only Workbench, Torch and Campfire can be made.</summary>
+    public static void OpenHand() { if (Instance != null) Instance.DoOpen(true); }
     public static void Close() { if (Instance != null) Instance.DoClose(); }
 
     void Awake()
@@ -162,6 +170,11 @@ public class WorkshopUI : MonoBehaviour
             case CraftItem.Torch: return Spr(large ? "icon_torch_large" : "icon_torch");
             case CraftItem.Campfire: return Spr("icon_campfire");
             case CraftItem.Shield: return Spr("icon_shield");
+            case CraftItem.Sword: return Spr("icon_sword");
+            case CraftItem.Workbench: return Resources.Load<Sprite>("RecipeBookUI/Icon_Workbench");
+            case CraftItem.Spear: return Spr("icon_spear");
+            case CraftItem.BattleAxe: return Spr("icon_doubleaxe");
+            case CraftItem.WarHammer: return Spr("icon_warhammer");
             default: return Spr("icon_spiketrap");
         }
     }
@@ -186,10 +199,14 @@ public class WorkshopUI : MonoBehaviour
         if (r.isToolUpgrade) return Cat.Tools;
         switch (r.item)
         {
-            case CraftItem.Shield: return Cat.Tools;
+            case CraftItem.Shield:
+            case CraftItem.Sword:
+            case CraftItem.Spear:
+            case CraftItem.BattleAxe:
+            case CraftItem.WarHammer: return Cat.Light;
             case CraftItem.HerbSalve:
             case CraftItem.HealthPotion: return Cat.Healing;
-            case CraftItem.Torch: return Cat.Light;
+            case CraftItem.Torch: return Cat.TrapsCamp;
             default: return Cat.TrapsCamp;
         }
     }
@@ -311,6 +328,7 @@ public class WorkshopUI : MonoBehaviour
 
         // ---- top
         Img(window, "TitleBanner", Spr("title_banner"), 626f, 58f, 680f, 160f, true);
+        modeText = Txt(window, "ModeText", "", 420f, 18f, 1080f, 30f, 22f, Gold, TextAlignmentOptions.Center);
         Image close = Img(window, "CloseButton", Spr("close"), 1748f, 168f, 96f, 96f, true, true);
         Button cb = close.gameObject.AddComponent<Button>();
         cb.colors = Tints();
@@ -412,20 +430,30 @@ public class WorkshopUI : MonoBehaviour
             r.count = Num(bt, "Count", "0", x + 40f, y + 4f, 34f, 32f, 22f, Color.white, TextAlignmentOptions.MidlineLeft);
             resources.Add(r);
         }
-        string[] slotTips = { "Axe", "Pickaxe", "Sword", "Torch", "Campfire", "Trap" };
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < Hotbar.Size; i++)
         {
+            int idx = i;
             Slot s = new Slot();
-            float x = 712f + i * 132f;
-            s.frame = Img(bt, "HotbarSlot_" + (i + 1), Spr("card_normal"), x, 18f, 122f, 122f);
+            float x = 840f + i * 146f;
+            s.frame = Img(bt, "HotbarSlot_" + (i + 1), Spr("card_normal"), x, 18f, 122f, 122f, false, true);
             s.icon = Img(s.frame.transform, "Icon", null, 14f, 12f, 94f, 94f, true);
             TextMeshProUGUI num = Num(s.frame.transform, "Number", (i + 1).ToString(), 9f, 4f, 28f, 30f, 22f, Parchment, TextAlignmentOptions.Center);
             num.outlineWidth = 0.25f; num.outlineColor = new Color32(10, 6, 3, 255);
             s.count = Num(s.frame.transform, "Count", "", 52f, 82f, 62f, 32f, 23f, Color.white, TextAlignmentOptions.BottomRight);
             s.count.outlineWidth = 0.25f; s.count.outlineColor = new Color32(10, 6, 3, 255);
-            s.sub = Txt(s.frame.transform, "Tip", slotTips[i], 6f, 96f, 110f, 22f, 15f, Dim, TextAlignmentOptions.Center);
+            s.sub = Txt(s.frame.transform, "Tip", "", 6f, 96f, 110f, 22f, 15f, Dim, TextAlignmentOptions.Center);
+            // drag a slot onto another one to swap them
+            UnityEngine.EventSystems.EventTrigger et = s.frame.gameObject.AddComponent<UnityEngine.EventSystems.EventTrigger>();
+            AddTrigger(et, UnityEngine.EventSystems.EventTriggerType.BeginDrag, d => BeginSlotDrag(idx));
+            AddTrigger(et, UnityEngine.EventSystems.EventTriggerType.Drag, d => { if (dragIcon != null) dragIcon.rectTransform.position = ((UnityEngine.EventSystems.PointerEventData)d).position; });
+            AddTrigger(et, UnityEngine.EventSystems.EventTriggerType.Drop, d => { if (dragFrom >= 0 && Hotbar.Instance != null) { Hotbar.Instance.Swap(dragFrom, idx); Click(); Refresh(); } });
+            AddTrigger(et, UnityEngine.EventSystems.EventTriggerType.EndDrag, d => EndSlotDrag());
             slots[i] = s;
         }
+        Txt(bt, "HotbarHint", "drag to reorder", 840f, 138f, 706f, 18f, 14f, Dim, TextAlignmentOptions.Center);
+        dragIcon = Img(window, "DragIcon", null, 0f, 0f, 90f, 90f, true);
+        dragIcon.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+        dragIcon.enabled = false;
 
         EnsureEventSystem();
     }
@@ -440,7 +468,7 @@ public class WorkshopUI : MonoBehaviour
 
     // ---------------------------------------------------------------- open / close
 
-    void DoOpen()
+    void DoOpen(bool hand)
     {
         if (IsOpen) return;
         IsOpen = true;
@@ -454,8 +482,10 @@ public class WorkshopUI : MonoBehaviour
         dCraftLabel.text = "";
         statusT = -1f; dStatus.text = "";
         // default view: Light / Torch (as in the design)
-        cat = Cat.Light;
-        selected = FindRecipe("torch");
+        handMode = hand;
+        modeText.text = hand ? "CRAFTING BY HAND  \u00b7  craft a Workbench and place it to unlock everything" : "";
+        if (hand) { cat = Cat.TrapsCamp; selected = FindRecipe("workbench"); }
+        else { cat = Cat.Light; selected = FindRecipe("sword0"); }
         Refresh();
         Click();
     }
@@ -522,7 +552,7 @@ public class WorkshopUI : MonoBehaviour
         if (c == Cat.Tools)
         {
             // row 1 = tier 1 upgrades, row 2 = tier 2 upgrades (Axe, Pickaxe, Sword)
-            string[] order = { "axe1", "pick1", "sword1", "axe2", "pick2", "sword2", "shield" };
+            string[] order = { "axe1", "pick1", "sword1", "axe2", "pick2", "sword2" };
             foreach (string id in order) { Recipe r = FindRecipe(id); if (r != null) list.Add(r); }
             return list;
         }
@@ -545,10 +575,12 @@ public class WorkshopUI : MonoBehaviour
     }
 
     /// <summary>"Locked" = a prerequisite is missing (Gemforged needs Reinforced first).</summary>
-    static bool IsLocked(Recipe r, out string why)
+    bool IsLocked(Recipe r, out string why)
     {
         why = "";
+        if (handMode && !r.byHand) { why = "Needs a Workbench - craft one here and place it"; return true; }
         if (!r.isToolUpgrade || CraftingState.Instance == null) return false;
+        if (!CraftingState.Instance.HasTool(r.tool)) { why = "You need a " + (r.tool == ToolType.Weapon ? "Sword" : r.tool.ToString()) + " first"; return true; }
         int cur = CraftingState.Instance.TierOf(r.tool);
         if (cur < r.tier - 1) { why = "Locked - craft the " + CraftingState.TierNames[r.tier - 1] + " upgrade first"; return true; }
         return false;
@@ -557,7 +589,9 @@ public class WorkshopUI : MonoBehaviour
     static bool IsOwned(Recipe r)
     {
         if (CraftingState.Instance == null) return false;
-        if (!r.isToolUpgrade) return r.item == CraftItem.Shield && CraftingState.Instance.Count(CraftItem.Shield) > 0;
+        if (!r.isToolUpgrade)
+            return (r.item == CraftItem.Shield && CraftingState.Instance.Count(CraftItem.Shield) > 0)
+                || (Weapons.KindOf(r.item).HasValue && CraftingState.Instance.Count(r.item) > 0);
         return CraftingState.Instance.TierOf(r.tool) >= r.tier;
     }
 
@@ -654,19 +688,22 @@ public class WorkshopUI : MonoBehaviour
             res.icon.color = n > 0 ? Color.white : new Color(1f, 1f, 1f, 0.45f);
         }
 
-        // bottom: hotbar (keys 1-6 of the game)
-        CraftingState st = CraftingState.Instance;
-        ToolController tc = ToolController.Instance;
-        ToolType cur = tc != null ? tc.CurrentTool : ToolType.Axe;
-        SetSlot(0, Spr("icon_axe"), Tier(ToolType.Axe), tc != null && cur == ToolType.Axe, true);
-        SetSlot(1, Spr("icon_pickaxe"), Tier(ToolType.Pickaxe), tc != null && cur == ToolType.Pickaxe, true);
-        SetSlot(2, Spr("icon_sword"), Tier(ToolType.Weapon), tc != null && cur == ToolType.Weapon, true);
-        int torches = st != null ? st.Count(CraftItem.Torch) : 0;
-        int fires = st != null ? st.Count(CraftItem.Campfire) : 0;
-        int traps = st != null ? st.Count(CraftItem.SpikeTrap) : 0;
-        SetSlot(3, Spr("icon_torch"), torches > 0 ? "x" + torches : "", false, torches > 0);
-        SetSlot(4, Spr("icon_campfire"), fires > 0 ? "x" + fires : "", false, fires > 0);
-        SetSlot(5, Spr("icon_spiketrap"), traps > 0 ? "x" + traps : "", false, traps > 0);
+        // bottom: the real 5-slot hotbar (keys 1-5)
+        Hotbar hb = Hotbar.Instance;
+        int selIndex = hb != null ? hb.Selected : -1;
+        for (int i = 0; i < Hotbar.Size; i++)
+        {
+            HotbarEntry e = hb != null ? hb[i] : new HotbarEntry();
+            bool has = e.kind != HotbarKind.Empty;
+            Slot sl = slots[i];
+            sl.frame.sprite = Spr(i == selIndex ? "card_selected" : "card_normal");
+            sl.icon.enabled = has;
+            sl.icon.sprite = e.Icon;
+            sl.icon.color = i == dragFrom ? new Color(1f, 1f, 1f, 0.3f) : Color.white;
+            sl.count.text = has && hb != null ? hb.CountText(i) : "";
+            sl.count.color = e.kind == HotbarKind.Tool ? Gold : Color.white;
+            sl.sub.text = e.Name;
+        }
     }
 
     static string Tier(ToolType t)
@@ -687,6 +724,31 @@ public class WorkshopUI : MonoBehaviour
     }
 
     // ---------------------------------------------------------------- crafting
+
+    static void AddTrigger(UnityEngine.EventSystems.EventTrigger et, UnityEngine.EventSystems.EventTriggerType type, System.Action<UnityEngine.EventSystems.BaseEventData> a)
+    {
+        UnityEngine.EventSystems.EventTrigger.Entry en = new UnityEngine.EventSystems.EventTrigger.Entry { eventID = type };
+        en.callback.AddListener(d => a(d));
+        et.triggers.Add(en);
+    }
+
+    void BeginSlotDrag(int i)
+    {
+        Hotbar hb = Hotbar.Instance;
+        if (hb == null || hb[i].kind == HotbarKind.Empty) { dragFrom = -1; return; }
+        dragFrom = i;
+        dragIcon.sprite = hb[i].Icon;
+        dragIcon.enabled = true;
+        dragIcon.transform.SetAsLastSibling();
+        Refresh();
+    }
+
+    void EndSlotDrag()
+    {
+        dragFrom = -1;
+        if (dragIcon != null) dragIcon.enabled = false;
+        Refresh();
+    }
 
     void OnCraftClicked()
     {
@@ -751,7 +813,19 @@ public class WorkshopUI : MonoBehaviour
         group.interactable = IsOpen;
         window.localScale = Vector3.one * Mathf.Lerp(0.95f, 1f, k);
         if (!IsOpen && openT <= 0f && canvas.enabled) canvas.enabled = false;
-        if (!IsOpen) return;
+        Keyboard kbc = Keyboard.current;
+        if (!IsOpen)
+        {
+            if (kbc != null && kbc.cKey.wasPressedThisFrame && Cursor.lockState == CursorLockMode.Locked
+                && !ChestLootUI.IsOpen && !RecipeBookUI.IsOpen && !PlacementController.IsPlacing)
+            {
+                ToolController tcc = ToolController.Instance;
+                HealthManager hmc = tcc != null ? tcc.GetComponent<HealthManager>() : null;
+                if (hmc == null || !hmc.IsDead) DoOpen(Workbench.Current == null);
+            }
+            return;
+        }
+        if (kbc != null && kbc.cKey.wasPressedThisFrame && handMode) { DoClose(); return; }
 
         Keyboard kb = Keyboard.current;
         if (kb != null && kb.escapeKey.wasPressedThisFrame) { DoClose(); return; }
@@ -773,6 +847,12 @@ public class WorkshopUI : MonoBehaviour
         if (crafting != null)
         {
             craftT += dt;
+            if (Time.unscaledTime >= nextCraftAnim)
+            {
+                nextCraftAnim = Time.unscaledTime + 1.1f;
+                ToolController tca = ToolController.Instance;
+                if (tca != null && tca.animator != null) tca.animator.SetTrigger("Craft");
+            }
             craftFill.fillAmount = Mathf.Clamp01(craftT / crafting.craftTime);
             if (craftT >= nextClang) { sfx.pitch = Random.Range(0.92f, 1.08f); sfx.PlayOneShot(clang, 0.5f); nextClang += 0.38f; }
             if (craftT >= crafting.craftTime)
@@ -786,6 +866,13 @@ public class WorkshopUI : MonoBehaviour
                     sfx.pitch = 1f;
                     sfx.PlayOneShot(done, 0.8f);
                     Status("Crafted: " + r.name, Good);
+                    if (!r.isToolUpgrade && (r.item == CraftItem.Campfire || r.item == CraftItem.SpikeTrap || r.item == CraftItem.Workbench) && PlacementController.Instance != null)
+                    {
+                        DoClose();
+                        PlacementController.Instance.BeginItem(r.item);
+                        HudMessage.Show("Choose a spot for the " + r.name + "  -  [LMB] place   [R] rotate   [RMB] later");
+                        return;
+                    }
                     CameraShake cs = CameraShake.Instance;
                     if (cs != null) cs.Shake(0.03f, 0.15f);
                 }

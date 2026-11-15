@@ -5,11 +5,10 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 0
-    path: Assets/FlipGameDev/BobCharacterFramework/Demo/Demo.unity
-    guid: 765acf1427ac5734caa72477c6bfa1b8
   - enabled: 1
-    path: Assets/FlipGameDev/BobCharacterFramework/Demo/Demo_LocalMultiplayer.unity
-    guid: dcfa6747be69bbd4f95c581a0f3be3a0
+    path: Assets/Scenes/MainMenu.unity
+    guid: 3f67641d5e5f5b3428b087c57727109c
+  - enabled: 1
+    path: Assets/Scenes/SampleScene.unity
+    guid: 99c9720ab356a0642a771bea13969a05
   m_configObjects: {}
-  m_UseUCBPForAssetBundles: 0
