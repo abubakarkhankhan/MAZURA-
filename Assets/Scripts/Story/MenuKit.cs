@@ -63,16 +63,40 @@ public static class MenuKit
 
     public static Button Btn(string label, Transform p, float x, float y, float w, System.Action onClick, string art = "use")
     {
-        RectTransform r = Rect("Btn_" + label, p, x, y, w, w * 0.47f);
+        // new wood-and-gold plank buttons (green = main action, red = quit / back), old art as fallback
+        string pk = art == "equip" ? "btn_plank_green" : art == "drop" ? "btn_plank_red" : "btn_plank";
+        Sprite pn = Resources.Load<Sprite>("Menu/UI/" + pk + "_normal");
+        bool plank = pn != null;
+        RectTransform r = Rect("Btn_" + label, p, x, y, w, plank ? w / 3.57f : w * 0.47f);
         Image img = r.gameObject.AddComponent<Image>();
-        img.sprite = S(art + "_normal"); img.preserveAspect = true;
+        img.sprite = plank ? pn : S(art + "_normal"); img.preserveAspect = true;
         Button b = r.gameObject.AddComponent<Button>();
         SpriteState ss = new SpriteState();
-        ss.highlightedSprite = S(art + "_hover"); ss.pressedSprite = S(art + "_hover"); ss.selectedSprite = S(art + "_normal"); ss.disabledSprite = S(art + "_disabled");
+        if (plank)
+        {
+            Sprite ph = Resources.Load<Sprite>("Menu/UI/" + pk + "_hover");
+            ss.highlightedSprite = ph; ss.pressedSprite = ph; ss.selectedSprite = pn; ss.disabledSprite = Resources.Load<Sprite>("Menu/UI/btn_plank_disabled");
+        }
+        else { ss.highlightedSprite = S(art + "_hover"); ss.pressedSprite = S(art + "_hover"); ss.selectedSprite = S(art + "_normal"); ss.disabledSprite = S(art + "_disabled"); }
         b.transition = Selectable.Transition.SpriteSwap; b.spriteState = ss;
-        TextMeshProUGUI t = Txt("T", r, label, 0f, 2f, w * 0.62f, w * 0.2f, w * 0.1f, Cream);
+        TextMeshProUGUI t = Txt("T", r, label, 0f, 2f, w * (plank ? 0.68f : 0.62f), w * (plank ? 0.16f : 0.2f), w * (plank ? 0.085f : 0.1f), Cream);
         t.fontStyle = FontStyles.Bold; t.outlineWidth = 0.2f; t.outlineColor = new Color32(20, 10, 4, 255); t.enableWordWrapping = false;
         t.enableAutoSizing = true; t.fontSizeMax = w * 0.1f; t.fontSizeMin = 12f;
+        b.onClick.AddListener(() => { if (onClick != null) onClick(); });
+        return b;
+    }
+
+    /// <summary>A round gold icon button (close, back, settings, help...) from Resources/Menu/UI/icon_*.</summary>
+    public static Button IconBtn(string icon, Transform p, float x, float y, float size, System.Action onClick)
+    {
+        RectTransform r = Rect("Icon_" + icon, p, x, y, size, size);
+        Image img = r.gameObject.AddComponent<Image>();
+        img.sprite = Resources.Load<Sprite>("Menu/UI/icon_" + icon); img.preserveAspect = true;
+        Button b = r.gameObject.AddComponent<Button>();
+        SpriteState ss = new SpriteState();
+        Sprite h = Resources.Load<Sprite>("Menu/UI/icon_" + icon + "_hover");
+        ss.highlightedSprite = h; ss.pressedSprite = h; ss.selectedSprite = img.sprite;
+        b.transition = Selectable.Transition.SpriteSwap; b.spriteState = ss;
         b.onClick.AddListener(() => { if (onClick != null) onClick(); });
         return b;
     }

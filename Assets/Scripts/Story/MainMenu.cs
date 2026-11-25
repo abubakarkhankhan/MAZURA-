@@ -14,19 +14,21 @@ public class MainMenu : MonoBehaviour
     SettingsPanel settings;
     CanvasGroup fader;
     float t;
-    bool leaving;
+    bool leaving, loadStarted;
 
     void Start()
     {
+        RemoveGameSystems();
         Time.timeScale = 1f;
         Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
         GameSettings.Apply();
+        if (!LoadingScreen.BootDone) LoadingScreen.Splash();   // first start of the game
         MenuKit.EnsureEventSystem();
         canvas = MenuKit.MakeCanvas(transform, "MenuCanvas", 10);
         Transform c = canvas.transform;
 
         // slowly drifting background picture of the game
-        Sprite bg = Resources.Load<Sprite>("Menu/menu_bg");
+        Sprite bg = (Resources.Load<Sprite>("Menu/bg_main") ?? Resources.Load<Sprite>("Menu/menu_bg"));
         Image bgi = MenuKit.FullScreen("Background", c, Color.white);
         bgi.sprite = bg; bgi.preserveAspect = false;
         bgRect = bgi.rectTransform; bgRect.sizeDelta = new Vector2(160f, 90f);
@@ -81,12 +83,37 @@ public class MainMenu : MonoBehaviour
             0f, 10f, 900f, 470f, 24f, MenuKit.Cream);
         body.enableWordWrapping = true; body.lineSpacing = 4f;
         MenuKit.Btn("BACK", helpGroup.transform, 0f, (543f - 905f) * K, 240f, () => { helpGroup.SetActive(false); mainGroup.SetActive(true); }, "drop");
+        MenuKit.IconBtn("close", helpGroup.transform, 1448f * K * 0.5f - 70f, 1086f * K * 0.5f - 70f, 76f, () => { helpGroup.SetActive(false); mainGroup.SetActive(true); });
         helpGroup.SetActive(false);
 
         settings = new SettingsPanel(c, () => mainGroup.SetActive(true));
 
         GameObject f = MenuKit.FullScreen("Fade", c, Color.black).gameObject;
         fader = f.AddComponent<CanvasGroup>(); fader.alpha = 1f; fader.blocksRaycasts = false;
+    }
+
+    /// <summary>
+    /// Game systems (inventory, crafting, hotbar...) create themselves in every scene. In the menu they are not
+    /// needed and some of them lock / hide the mouse or add a second EventSystem, so the buttons stop working.
+    /// </summary>
+    void RemoveGameSystems()
+    {
+        bool haveEvents = false;
+        foreach (GameObject g in gameObject.scene.GetRootGameObjects())
+        {
+            if (g == gameObject || g.GetComponent<Camera>() != null || g.GetComponent<AmbientMusic>() != null) continue;
+            if (g.GetComponent<UnityEngine.EventSystems.EventSystem>() != null && !haveEvents) { haveEvents = true; continue; }
+            Destroy(g);
+        }
+        Time.timeScale = 1f;
+        AudioListener.pause = false;
+    }
+
+    void LateUpdate()
+    {
+        // nothing in the menu may lock or hide the mouse
+        if (Cursor.lockState != CursorLockMode.None) Cursor.lockState = CursorLockMode.None;
+        if (!Cursor.visible) Cursor.visible = true;
     }
 
     void Update()
@@ -99,7 +126,7 @@ public class MainMenu : MonoBehaviour
             bgRect.anchoredPosition = new Vector2(Mathf.Sin(t * 0.07f) * 30f, Mathf.Cos(t * 0.05f) * 15f);
         }
         if (fader != null) fader.alpha = Mathf.MoveTowards(fader.alpha, leaving ? 1f : 0f, Time.unscaledDeltaTime * 1.5f);
-        if (leaving && fader.alpha >= 1f) SceneManager.LoadScene(gameScene);
+        if (leaving && !loadStarted) { loadStarted = true; LoadingScreen.LoadScene(gameScene, GameSave.PendingLoad ? "continue" : "forest"); }
     }
 
     void Play()

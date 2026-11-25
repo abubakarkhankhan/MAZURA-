@@ -89,14 +89,14 @@ public class StoryScreen : MonoBehaviour
         IntroShown = false;
         // after dying: go back to the last save (if there is one)
         if (GameSave.HasSave && (DungeonQuest.Instance == null || DungeonQuest.Instance.Stage != QuestStage.Won)) { GameSave.PendingLoad = true; IntroShown = true; }
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        LoadingScreen.LoadScene(SceneManager.GetActiveScene().name, GameSave.PendingLoad ? "continue" : "forest");
     }
 
     public static void ToMenu()
     {
         Time.timeScale = 1f;
         IntroShown = false;
-        if (Application.CanStreamedLevelBeLoaded("MainMenu")) SceneManager.LoadScene("MainMenu");
+        if (Application.CanStreamedLevelBeLoaded("MainMenu")) LoadingScreen.LoadScene("MainMenu", "menu");
         else Restart();
     }
 

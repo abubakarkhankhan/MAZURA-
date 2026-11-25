@@ -98,7 +98,7 @@ public class DungeonQuest : MonoBehaviour
     {
         if (dungeonStart == null) return;
         Transform s = dungeonStart;
-        StoryScreen.FadeThrough(() =>
+        LoadingScreen.Transition("dungeon", null, () =>
         {
             TeleportPlayer(s.position, s.eulerAngles.y);
             NightUI.Banner("THE OLD DUNGEON", "Find the 3 keys to open the sealed door", true);
@@ -109,7 +109,7 @@ public class DungeonQuest : MonoBehaviour
     {
         if (forestGate == null || forestGate.outsidePoint == null) return;
         Transform o = forestGate.outsidePoint;
-        StoryScreen.FadeThrough(() => TeleportPlayer(o.position, o.eulerAngles.y));
+        LoadingScreen.Transition("forest", "Returning to the Dark Forest...", () => TeleportPlayer(o.position, o.eulerAngles.y));
     }
 
     // ---------------------------------------------------------------- objective text for the HUD

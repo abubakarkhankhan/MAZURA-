@@ -85,6 +85,13 @@ public class MapChest : MonoBehaviour
     [Tooltip("The chest next to the start: holds the Axe and the Pickaxe instead of random loot.")]
     [SerializeField] private bool starterKit;
 
+    [Header("Dungeon")]
+    [Tooltip("A chest in the Old Dungeon: no map pieces, richer loot (gems, potions) and it fills up again after a while.")]
+    public bool dungeonChest;
+    [Tooltip("Minutes until an emptied dungeon chest has new loot.")]
+    public float refillMinutes = 4f;
+    float emptySince = -1f;
+
     public List<ChestLoot> Loot { get; private set; }
 
     bool playerInRange;
@@ -134,6 +141,19 @@ public class MapChest : MonoBehaviour
     {
         UpdatePrompt();
         if (glow != null) glow.intensity = Mathf.MoveTowards(glow.intensity, glowTarget, Time.deltaTime * 2.5f);
+
+        // dungeon chests fill up again some minutes after they were emptied
+        if (dungeonChest && isOpened && !opening && Loot.Count == 0)
+        {
+            if (emptySince < 0f) { emptySince = Time.time; glowTarget = 0f; }
+            else if (Time.time - emptySince > refillMinutes * 60f && !ChestLootUI.IsOpen)
+            {
+                RollLoot();
+                emptySince = -1f;
+                glowTarget = 1.1f;
+                if (sparkles != null) sparkles.Emit(16);
+            }
+        }
 
         if (!playerInRange || opening) return;
         if (isOpened && Loot.Count == 0) return;
@@ -254,6 +274,7 @@ public class MapChest : MonoBehaviour
     void RollLoot()
     {
         Loot.Clear();
+        if (dungeonChest) { DungeonLoot(); return; }
         if (starterKit)
         {
             Loot.Add(new ChestLoot { kind = ChestLoot.Kind.Tool, tool = ToolType.Axe, amount = 1 });
@@ -292,6 +313,36 @@ public class MapChest : MonoBehaviour
             CraftItem[] rare = { CraftItem.HealthPotion, CraftItem.HerbSalve, CraftItem.Torch };
             Loot.Add(new ChestLoot { kind = ChestLoot.Kind.Crafted, crafted = rare[Random.Range(0, rare.Length)], amount = 1 });
         }
+    }
+
+    /// <summary>Loot of a dungeon chest: gems, stone and herbs, often a potion. Never map pieces.</summary>
+    void DungeonLoot()
+    {
+        List<ChestLoot> pool = new List<ChestLoot>
+        {
+            new ChestLoot { kind = ChestLoot.Kind.Resource, item = ItemType.Stone, amount = Random.Range(4, 9) },
+            new ChestLoot { kind = ChestLoot.Kind.Resource, item = ItemType.Herb, amount = Random.Range(2, 6) },
+            new ChestLoot { kind = ChestLoot.Kind.Resource, item = ItemType.Ruby, amount = Random.Range(1, 4) },
+            new ChestLoot { kind = ChestLoot.Kind.Resource, item = ItemType.Sapphire, amount = Random.Range(1, 4) },
+            new ChestLoot { kind = ChestLoot.Kind.Resource, item = ItemType.Emerald, amount = Random.Range(1, 4) },
+            new ChestLoot { kind = ChestLoot.Kind.Resource, item = ItemType.Amber, amount = Random.Range(1, 4) },
+        };
+        // there are no trees down here: wood always comes from the chests
+        Loot.Add(new ChestLoot { kind = ChestLoot.Kind.Resource, item = ItemType.Wood, amount = Random.Range(4, 8) });
+        int count = Random.Range(2, 5);
+        for (int i = 0; i < count && pool.Count > 0; i++)
+        {
+            int k = Random.Range(0, pool.Count);
+            Loot.Add(pool[k]);
+            pool.RemoveAt(k);
+        }
+        if (Random.value < 0.75f)
+        {
+            CraftItem[] rare = { CraftItem.HealthPotion, CraftItem.HealthPotion, CraftItem.HerbSalve, CraftItem.Torch };
+            Loot.Add(new ChestLoot { kind = ChestLoot.Kind.Crafted, crafted = rare[Random.Range(0, rare.Length)], amount = 1 });
+        }
+        if (Random.value < 0.25f)
+            Loot.Add(new ChestLoot { kind = ChestLoot.Kind.Crafted, crafted = CraftItem.HealthPotion, amount = 1 });
     }
 
     /// <summary>Gives the player the item in this slot. Returns false if nothing was taken.</summary>

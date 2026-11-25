@@ -35,11 +35,11 @@ public class PauseMenu : MonoBehaviour
         MenuKit.Img("Frame", group.transform, MenuKit.S("inventory_frame"), 0f, 0f, 1448f * K, 1086f * K).raycastTarget = true;
         TextMeshProUGUI t = MenuKit.Txt("Title", group.transform, "PAUSED", 0f, (543f - 136f) * K, 400f, 56f, 34f, new Color(1f, 0.95f, 0.85f));
         t.fontStyle = FontStyles.Bold; t.characterSpacing = 8f;
-        MenuKit.Btn("RESUME", group.transform, 0f, 165f, 300f, Close, "equip");
-        MenuKit.Btn("SAVE GAME", group.transform, 0f, 60f, 300f, () => { if (GameSave.Instance != null && GameSave.Instance.TrySave(false)) Close(); });
-        MenuKit.Btn("SETTINGS", group.transform, 0f, -45f, 300f, () => { group.SetActive(false); settings.Show(true); });
-        MenuKit.Btn("MAIN MENU", group.transform, 0f, -150f, 300f, () => { Close(); StoryScreen.ToMenu(); });
-        MenuKit.Btn("QUIT GAME", group.transform, 0f, -255f, 300f, Quit, "drop");
+        MenuKit.Btn("RESUME", group.transform, 0f, 165f, 360f, Close, "equip");
+        MenuKit.Btn("SAVE GAME", group.transform, 0f, 60f, 360f, () => { if (GameSave.Instance != null && GameSave.Instance.TrySave(false)) Close(); });
+        MenuKit.Btn("SETTINGS", group.transform, 0f, -45f, 360f, () => { group.SetActive(false); settings.Show(true); });
+        MenuKit.Btn("MAIN MENU", group.transform, 0f, -150f, 360f, () => { Close(); StoryScreen.ToMenu(); });
+        MenuKit.Btn("QUIT GAME", group.transform, 0f, -255f, 360f, Quit, "drop");
         settings = new SettingsPanel(c, () => group.SetActive(true));
         canvas.enabled = false;
     }
@@ -51,7 +51,7 @@ public class PauseMenu : MonoBehaviour
         if (kb != null && kb.escapeKey.wasPressedThisFrame)
         {
             if (IsOpen) { if (settings.Visible) { settings.Show(false); group.SetActive(true); } else Close(); }
-            else if (locked && lockedLastFrame && !StoryScreen.IsOpen && !PlacementController.IsPlacing) Open();
+            else if (locked && lockedLastFrame && !StoryScreen.IsOpen && !LoadingScreen.IsShowing && !PlacementController.IsPlacing) Open();
         }
         lockedLastFrame = locked;
     }

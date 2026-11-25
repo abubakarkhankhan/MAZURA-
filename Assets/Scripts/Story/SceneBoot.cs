@@ -24,6 +24,7 @@ public static class SceneBoot
     {
         loads++;
         if (loads == 1 || mode != LoadSceneMode.Single) return;   // Unity already ran them for the first scene
+        if (Object.FindAnyObjectByType<ToolController>() == null) return;   // the main menu has no player: no game systems there
         if (boots == null) Collect();
         foreach (MethodInfo m in boots)
         {

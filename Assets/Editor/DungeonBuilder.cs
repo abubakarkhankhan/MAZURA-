@@ -98,6 +98,7 @@ public static class DungeonBuilder
         g[37, 3] = 'Y'; g[36, 1] = 'k'; g[38, 1] = 'k'; g[39, 5] = 'b'; g[35, 5] = 't'; g[38, 4] = 's';
         g[3, 37] = 'N'; g[2, 39] = 'k'; g[4, 39] = 'k'; g[1, 35] = 'b'; g[5, 36] = 't'; g[4, 36] = 'e';
         // start room
+        g[1, 3] = 'h'; g[39, 3] = 'h'; g[1, 37] = 'h';    // a chest in every key room
         g[21, 37] = 'S'; g[21, 39] = 'X'; g[19, 39] = 'b'; g[23, 39] = 'b'; g[19, 35] = 'k';
 
         // the maze cells
@@ -105,12 +106,15 @@ public static class DungeonBuilder
         for (int y = 1; y < N - 1; y += 2)
             for (int x = 1; x < N - 1; x += 2)
                 if (!Reserved(x, y) && g[x, y] == '.') cells.Add(new Vector2Int(x, y));
-        // barrels in some dead ends
+        // chests and barrels in the dead ends
+        int chests = 0;
         foreach (Vector2Int c in cells)
         {
             int open = 0;
             for (int d = 0; d < 4; d++) if (g[c.x + sx[d] / 2, c.y + sy[d] / 2] != '#') open++;
-            if (open == 1 && r.NextDouble() < 0.35) g[c.x, c.y] = 'b';
+            if (open != 1 || Mathf.Abs(c.x - 21) + Mathf.Abs(c.y - 37) < 6) continue;
+            if (chests < 12 && r.NextDouble() < 0.5) { g[c.x, c.y] = 'h'; chests++; }
+            else if (r.NextDouble() < 0.35) g[c.x, c.y] = 'b';
         }
         // enemies: spread out, away from the start room
         for (int i = cells.Count - 1; i > 0; i--) { int j = r.Next(i + 1); Vector2Int t = cells[i]; cells[i] = cells[j]; cells[j] = t; }
@@ -126,6 +130,21 @@ public static class DungeonBuilder
             if (near) continue;
             if (guards < 16) { g[c.x, c.y] = 'e'; guards++; } else { g[c.x, c.y] = 's'; specters++; }
             placed.Add(c);
+        }
+
+        // gem crystals along the corridors (mine them with the pickaxe)
+        int gems = 0;
+        foreach (Vector2Int c in cells)
+        {
+            if (gems >= 22) break;
+            if (g[c.x, c.y] != '.') continue;
+            if (Mathf.Abs(c.x - 21) + Mathf.Abs(c.y - 37) < 6) continue;
+            bool nearGem = false;
+            for (int yy = c.y - 4; yy <= c.y + 4 && !nearGem; yy++)
+                for (int xx = c.x - 4; xx <= c.x + 4; xx++)
+                    if (xx >= 0 && yy >= 0 && xx < N && yy < N && g[xx, yy] == 'g') { nearGem = true; break; }
+            if (nearGem) continue;
+            g[c.x, c.y] = 'g'; gems++;
         }
 
         string[] rows = new string[N];
@@ -161,6 +180,8 @@ public static class DungeonBuilder
         rng = new System.Random(1337);
         Map = MakeMap(1337);
         torches.Clear();
+        chestCount = 0;
+        gemCount = 0;
         GameObject old = GameObject.Find("OldDungeon");
         if (old != null) Object.DestroyImmediate(old);
         root = new GameObject("OldDungeon").transform;
@@ -230,6 +251,8 @@ public static class DungeonBuilder
                     case 'B': Marker(gameplay, "BossSpawn", DungeonMarker.Kind.BossSpawn, c, 180f); break;
                     case 'P': Marker(gameplay, "PortalPoint", DungeonMarker.Kind.Portal, c, 0f); break;
                     case 'X': WayBack(gameplay, c); break;
+                    case 'h': Chest(gameplay, x, y, c); break;
+                    case 'g': Gem(gameplay, x, y, c); break;
                 }
             }
 
@@ -409,6 +432,55 @@ public static class DungeonBuilder
             l.enabled = false;
             bg.keyLights[i] = l;
         }
+    }
+
+    static readonly string[] GemNames = { "Ruby", "Sapphire", "Emerald", "Amber" };
+    static readonly Color[] GemColors = { new Color(1f, 0.25f, 0.3f), new Color(0.35f, 0.55f, 1f), new Color(0.3f, 1f, 0.5f), new Color(1f, 0.65f, 0.2f) };
+    static int gemCount;
+
+    /// <summary>A gem crystal (copy of the forest ones) against a wall, with a small coloured glow.</summary>
+    static void Gem(Transform parent, int x, int y, Vector3 c)
+    {
+        Vector3 w = NearWall(x, y);
+        if (w == Vector3.zero) return;
+        int k = rng.Next(GemNames.Length);
+        GameObject tpl = null;
+        foreach (ResourceNode n in Object.FindObjectsByType<ResourceNode>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            if (n.name.StartsWith("GemCrystal_" + GemNames[k]) && !n.transform.IsChildOf(root)) { tpl = n.gameObject; break; }
+        if (tpl == null) return;
+        GameObject g = Object.Instantiate(tpl, parent);
+        g.name = "GemCrystal_" + GemNames[k] + "_Dungeon" + (++gemCount);
+        g.transform.SetPositionAndRotation(c + w * 1.0f + Vector3.up * tpl.transform.position.y, Quaternion.Euler(0f, rng.Next(360), 0f));
+        g.transform.localScale = tpl.transform.lossyScale;
+        ResourceNode rn = g.GetComponent<ResourceNode>();
+        if (rn != null)
+        {
+            SerializedObject so = new SerializedObject(rn);
+            SerializedProperty p = so.FindProperty("respawnElsewhere");
+            if (p != null) { p.boolValue = false; so.ApplyModifiedPropertiesWithoutUndo(); }
+        }
+        Light l = new GameObject("GemGlow").AddComponent<Light>();
+        l.transform.SetParent(g.transform, true);
+        l.transform.position = c + w * 0.6f + Vector3.up * 0.9f;
+        l.type = LightType.Point; l.color = GemColors[k]; l.range = 4f; l.intensity = 1.4f; l.shadows = LightShadows.None;
+    }
+
+    static int chestCount;
+    static void Chest(Transform parent, int x, int y, Vector3 c)
+    {
+        GameObject src = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/MapChest.prefab");
+        if (src == null) return;
+        // face the open side (dead end) or the middle of the room
+        Vector3 face = Vector3.zero; int open = 0;
+        for (int d = 0; d < 4; d++) if (Floor(x + DX[d], y + DY[d])) { open++; face = WorldDir(d); }
+        if (open > 1) { face = Vector3.zero; for (int d = 0; d < 4; d++) if (Floor(x + DX[d], y + DY[d]) && Floor(x + DX[d] * 2, y + DY[d] * 2)) face = WorldDir(d); }
+        if (face == Vector3.zero) face = Vector3.forward;
+        GameObject g = (GameObject)PrefabUtility.InstantiatePrefab(src, parent);
+        g.name = "DungeonChest_" + (++chestCount);
+        g.transform.SetPositionAndRotation(c - face * 0.9f, Quaternion.LookRotation(face));
+        MapChest mc = g.GetComponent<MapChest>();
+        if (mc != null) { mc.dungeonChest = true; EditorUtility.SetDirty(mc); }
+        AddLight(c - face * 0.4f + Vector3.up * 1.6f, new Color(1f, 0.78f, 0.4f), 4f, 0.9f, false);
     }
 
     static void Marker(Transform parent, string name, DungeonMarker.Kind kind, Vector3 c, float yaw)
